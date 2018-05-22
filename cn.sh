@@ -21,7 +21,7 @@ done
 
 # cryptogen gen crytos of orgs
 set -x
-cryptogen generate --config=./crypto-config.yaml
+cryptogen generate --config=./config/orderer-crypto-config.yaml
 
 configtxgen -profile TwoOrgsOrdererGenesis -outputBlock ./channel-artifacts/genesis.block
 configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/channel.tx -channelID $CHANNEL_NAME
@@ -30,3 +30,5 @@ configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate ./channel-artifacts
 
 # Start the network
 docker-compose -f docker-compose-cli.yaml up -d
+
+
