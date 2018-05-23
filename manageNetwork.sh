@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export PATH=${PWD}/../../bin:$PATH
-export FABRIC_CFG_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/../configs
+export PATH=${PWD}/../bin:$PATH
+export FABRIC_CFG_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/configs
 IMAGETAG=latest
 export IMAGE_TAG=$IMAGETAG
 COMPOSE_FILE=$FABRIC_CFG_PATH/docker-compose-cli.yaml
@@ -35,11 +35,11 @@ function generateCerts (){
   echo "##### Generate certificates using cryptogen tool #########"
   echo "##########################################################"
 
-  if [ -d "../crypto-config" ]; then
-    rm -Rf ../crypto-config
+  if [ -d "crypto-config" ]; then
+    rm -Rf crypto-config
   fi
   set -x
-  cryptogen generate --config=$FABRIC_CFG_PATH/crypto-config.yaml --output="../crypto-config"
+  cryptogen generate --config=$FABRIC_CFG_PATH/crypto-config.yaml
   res=$?
   set +x
   if [ $res -ne 0 ]; then
@@ -62,7 +62,7 @@ function generateOfficialChannelArtifacts() {
   # Note: For some unknown reason (at least for now) the block file can't be
   # named orderer.genesis.block or the orderer will fail to launch!
   set -x
-  configtxgen -profile OrdererGenesis -outputBlock ../channel-artifacts/genesis.block
+  configtxgen -profile OrdererGenesis -outputBlock channel-artifacts/genesis.block
   res=$?
   set +x
   if [ $res -ne 0 ]; then
@@ -75,7 +75,7 @@ function generateOfficialChannelArtifacts() {
   echo "#################################################################"
   set -x
   # configtxgen -profile OfficialChannel -outputCreateChannelTx ../channel-artifacts/channel.tx -channelID officialchannel
-  export CHANNEL_NAME=officialchannel  && ../../bin/configtxgen -profile OfficialChannel -outputCreateChannelTx ../channel-artifacts/channel.tx -channelID $CHANNEL_NAME
+  export CHANNEL_NAME=officialchannel  && ../bin/configtxgen -profile OfficialChannel -outputCreateChannelTx channel-artifacts/channel.tx -channelID $CHANNEL_NAME
   res=$?
   set +x
   if [ $res -ne 0 ]; then
@@ -88,7 +88,7 @@ function generateOfficialChannelArtifacts() {
   echo "#######    Generating anchor peer update for Org1MSP   ##########"
   echo "#################################################################"
   set -x
-  configtxgen -profile OfficialChannel -outputAnchorPeersUpdate ../channel-artifacts/OfficialMSPanchors.tx -channelID officialchannel -asOrg OfficialMSP
+  configtxgen -profile OfficialChannel -outputAnchorPeersUpdate channel-artifacts/OfficialMSPanchors.tx -channelID officialchannel -asOrg OfficialMSP
   res=$?
   set +x
   if [ $res -ne 0 ]; then
@@ -145,7 +145,7 @@ function checkPrereqs() {
 function networkUp () {
   checkPrereqs
   # generate artifacts if they don't exist
-  if [ ! -d "../crypto-config" ]; then
+  if [ ! -d "crypto-config" ]; then
     generateFoundation
   fi
   
@@ -173,7 +173,7 @@ function networkDown () {
   #Cleanup images
   removeUnwantedImages
   # remove orderer block and other channel configuration transactions and certs
-  rm -rf ../channel-artifacts/*.block ../channel-artifacts/*.tx ../crypto-config 
+  rm -rf channel-artifacts/*.block channel-artifacts/*.tx crypto-config 
   # fi
 }
 
