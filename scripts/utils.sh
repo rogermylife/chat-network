@@ -9,9 +9,9 @@
 
 # verify the result of the end-to-end test
 verifyResult () {
-	if [ $1 -ne 0 ] ; then
+    if [ $1 -ne 0 ] ; then
 		echo "!!!!!!!!!!!!!!! "$2" !!!!!!!!!!!!!!!!"
-    echo "========= ERROR !!! FAILED to execute End-2-End Scenario ==========="
+    	echo "========= ERROR !!! FAILED to execute End-2-End Scenario ==========="
 		echo
    		exit 1
 	fi
@@ -19,16 +19,17 @@ verifyResult () {
 
 # Set OrdererOrg.Admin globals
 setOrdererGlobals() {
-        CORE_PEER_LOCALMSPID="OrdererMSP"
-        CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-        CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/users/Admin@example.com/msp
+	CORE_PEER_LOCALMSPID="OrdererMSP"
+	CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/chat-network.com/orderers/orderer.chat-network.com/msp/tlscacerts/tlsca.chat-network.com-cert.pem
+	CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/chat-network.com/users/Admin@chat-network.com/msp
 }
 
 setGlobals () {
 	PEER=$1
 	ORG=$2
-	CORE_PEER_LOCALMSPID="${ORG}MSP"
-	CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/$ORG.chat-network.com/peers/peer$Peer.$ORG.chat-network.com/tls/ca.crt
+	ORGID="$(tr '[:lower:]' '[:upper:]' <<< ${ORG:0:1})${ORG:1}"
+	CORE_PEER_LOCALMSPID="${ORGID}MSP"
+	CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/$ORG.chat-network.com/peers/peer$PEER.$ORG.chat-network.com/tls/ca.crt
 	CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/$ORG.chat-network.com/users/Admin@$ORG.chat-network.com/msp
 	CORE_PEER_ADDRESS=peer$PEER.$ORG.chat-network.com:7051
 	env |grep CORE
@@ -36,21 +37,21 @@ setGlobals () {
 
 
 updateAnchorPeers() {
-  PEER=$1
-  ORG=$2
-  setGlobals $PEER $ORG
+    PEER=$1
+	ORG=$2
+	setGlobals $PEER $ORG
 
-  if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
-                set -x
-		peer channel update -o orderer.example.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/${CORE_PEER_LOCALMSPID}anchors.tx >&log.txt
-		res=$?
-                set +x
-  else
-                set -x
-		peer channel update -o orderer.example.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/${CORE_PEER_LOCALMSPID}anchors.tx --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA >&log.txt
-		res=$?
-                set +x
-  fi
+	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
+		set -x
+        peer channel update -o orderer.chat-network.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/${CORE_PEER_LOCALMSPID}anchors.tx >&log.txt
+        res=$?
+		set +x
+  	else
+		set -x
+        peer channel update -o orderer.chat-network.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/${CORE_PEER_LOCALMSPID}anchors.tx --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA >&log.txt
+        res=$?
+		set +x
+  	fi
 	cat log.txt
 	verifyResult $res "Anchor peer update failed"
 	echo "===================== Anchor peers for org \"$CORE_PEER_LOCALMSPID\" on \"$CHANNEL_NAME\" is updated successfully ===================== "
@@ -90,8 +91,8 @@ installChaincode () {
 	res=$?
         set +x
 	cat log.txt
-	verifyResult $res "Chaincode installation on peer${PEER}.org${ORG} has Failed"
-	echo "===================== Chaincode is installed on peer${PEER}.org${ORG} ===================== "
+	verifyResult $res "Chaincode installation on peer${PEER}.${ORG} has Failed"
+	echo "===================== Chaincode is installed on peer${PEER}.${ORG} ===================== "
 	echo
 }
 
@@ -105,12 +106,13 @@ instantiateChaincode () {
 	# lets supply it directly as we know it using the "-o" option
 	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
                 set -x
-		peer chaincode instantiate -o orderer.example.com:7050 -C $CHANNEL_NAME -n mycc -l ${LANGUAGE} -v ${VERSION} -c '{"Args":["init","a","100","b","200"]}' -P "AND	('Org1MSP.peer','Org2MSP.peer')" >&log.txt
+		peer chaincode instantiate -o orderer.chat-network.com:7050 -C $CHANNEL_NAME -n mycc -l ${LANGUAGE} -v ${VERSION} -c '{"Args":["init","a","100","b","200"]}' -P "AND ('OfficialMSP.peer')" >&log.txt
 		res=$?
                 set +x
 	else
                 set -x
-		peer chaincode instantiate -o orderer.example.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -l ${LANGUAGE} -v 1.0 -c '{"Args":["init","a","100","b","200"]}' -P "AND	('Org1MSP.peer','Org2MSP.peer')" >&log.txt
+		peer chaincode instantiate -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc \
+			-l ${LANGUAGE} -v 1.0 -c '{"Args":["init","a","100","b","200"]}' -P "AND ('OfficialMSP.peer')" >&log.txt
 		res=$?
                 set +x
 	fi
@@ -126,7 +128,7 @@ upgradeChaincode () {
     setGlobals $PEER $ORG
 
     set -x
-    peer chaincode upgrade -o orderer.example.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -v 2.0 -c '{"Args":["init","a","90","b","210"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer','Org3MSP.peer')"
+    peer chaincode upgrade -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -v 2.0 -c '{"Args":["init","a","90","b","210"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer','Org3MSP.peer')"
     res=$?
 	set +x
     cat log.txt
@@ -180,11 +182,11 @@ fetchChannelConfig() {
   echo "Fetching the most recent configuration block for the channel"
   if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
     set -x
-    peer channel fetch config config_block.pb -o orderer.example.com:7050 -c $CHANNEL --cafile $ORDERER_CA
+    peer channel fetch config config_block.pb -o orderer.chat-network.com:7050 -c $CHANNEL --cafile $ORDERER_CA
     set +x
   else
     set -x
-    peer channel fetch config config_block.pb -o orderer.example.com:7050 -c $CHANNEL --tls --cafile $ORDERER_CA
+    peer channel fetch config config_block.pb -o orderer.chat-network.com:7050 -c $CHANNEL --tls --cafile $ORDERER_CA
     set +x
   fi
 
@@ -231,12 +233,12 @@ chaincodeInvoke () {
 	# lets supply it directly as we know it using the "-o" option
 	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
                 set -x
-		peer chaincode invoke -o orderer.example.com:7050 -C $CHANNEL_NAME -n mycc -c '{"Args":["invoke","a","b","10"]}' >&log.txt
+		peer chaincode invoke -o orderer.chat-network.com:7050 -C $CHANNEL_NAME -n mycc -c '{"Args":["invoke","a","b","10"]}' >&log.txt
 		res=$?
                 set +x
 	else
                 set -x
-		peer chaincode invoke -o orderer.example.com:7050  --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -c '{"Args":["invoke","a","b","10"]}' >&log.txt
+		peer chaincode invoke -o orderer.chat-network.com:7050  --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -c '{"Args":["invoke","a","b","10"]}' >&log.txt
 		res=$?
                 set +x
 	fi

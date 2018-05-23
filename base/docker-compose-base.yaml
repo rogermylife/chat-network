@@ -8,7 +8,7 @@ version: '2'
 services:
 
   orderer.chat-network.com:
-    container_name: orderer.chat-network.com:
+    container_name: orderer.chat-network.com
     image: hyperledger/fabric-orderer:$IMAGE_TAG
     environment:
       - ORDERER_GENERAL_LOGLEVEL=INFO

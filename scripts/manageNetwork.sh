@@ -3,7 +3,9 @@
 export PATH=${PWD}/../../bin:$PATH
 export FABRIC_CFG_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/../configs
 IMAGETAG=latest
-COMPOSE_FILE=$FABRIC_CFG_PATH/configs/docker-compose-cli.yaml
+export IMAGE_TAG=$IMAGETAG
+COMPOSE_FILE=$FABRIC_CFG_PATH/docker-compose-cli.yaml
+LANGUAGE='golang'
 CLI_TIMEOUT=10
 CLI_DELAY=3
 BLACKLISTED_VERSIONS="^1\.0\. ^1\.1\.0-preview ^1\.1\.0-alpha"
@@ -86,7 +88,7 @@ function generateOfficialChannelArtifacts() {
   echo "#######    Generating anchor peer update for Org1MSP   ##########"
   echo "#################################################################"
   set -x
-  configtxgen -profile OfficialChannel -outputAnchorPeersUpdate ../channel-artifacts/OfficialOrgMSPanchors.tx -channelID officialchannel -asOrg OfficialMSP
+  configtxgen -profile OfficialChannel -outputAnchorPeersUpdate ../channel-artifacts/OfficialMSPanchors.tx -channelID officialchannel -asOrg OfficialMSP
   res=$?
   set +x
   if [ $res -ne 0 ]; then
@@ -143,9 +145,8 @@ function checkPrereqs() {
 function networkUp () {
   checkPrereqs
   # generate artifacts if they don't exist
-  if [ ! -d "crypto-config" ]; then
-    generateCerts
-    generateOfficialChannelArtifacts
+  if [ ! -d "../crypto-config" ]; then
+    generateFoundation
   fi
   
   IMAGE_TAG=$IMAGETAG docker-compose -f $COMPOSE_FILE up -d 2>&1
@@ -155,14 +156,44 @@ function networkUp () {
     exit 1
   fi
   # now run the end to end script
-  docker exec cli scripts/script.sh officialchannel $CLI_DELAY $LANGUAGE $CLI_TIMEOUT
+  docker exec cli scripts/script.sh 'officialchannel' $CLI_DELAY $LANGUAGE $CLI_TIMEOUT
   if [ $? -ne 0 ]; then
     echo "ERROR !!!! Test failed"
     exit 1
   fi
 }
 
+function networkDown () {
+  docker-compose -f $COMPOSE_FILE down --volumes
+  # Don't remove the generated artifacts -- note, the ledgers are always removed
+  # if [ "$MODE" != "restart" ]; then
+  # Bring down the network, deleting the volumes
+  #Cleanup the chaincode containers
+  clearContainers
+  #Cleanup images
+  removeUnwantedImages
+  # remove orderer block and other channel configuration transactions and certs
+  rm -rf ../channel-artifacts/*.block ../channel-artifacts/*.tx ../crypto-config 
+  # fi
+}
 
+function clearContainers () {
+  CONTAINER_IDS=$(docker ps -aq)
+  if [ -z "$CONTAINER_IDS" -o "$CONTAINER_IDS" == " " ]; then
+    echo "---- No containers available for deletion ----"
+  else
+    docker rm -f $CONTAINER_IDS
+  fi
+}
+
+function removeUnwantedImages() {
+  DOCKER_IMAGE_IDS=$(docker images | grep "dev\|none\|test-vp\|peer[0-9]-" | awk '{print $3}')
+  if [ -z "$DOCKER_IMAGE_IDS" -o "$DOCKER_IMAGE_IDS" == " " ]; then
+    echo "---- No images available for deletion ----"
+  else
+    docker rmi -f $DOCKER_IMAGE_IDS
+  fi
+}
 
 if [ "$1" = "-m" ];then	# supports old usage, muscle memory is powerful!
     shift
