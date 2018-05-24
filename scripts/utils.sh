@@ -174,26 +174,26 @@ chaincodeQuery () {
 # fetchChannelConfig <channel_id> <output_json>
 # Writes the current channel config for a given channel to a JSON file
 fetchChannelConfig() {
-  CHANNEL=$1
-  OUTPUT=$2
+	CHANNEL=$1
+	OUTPUT=$2
 
-  setOrdererGlobals
+	setOrdererGlobals
 
-  echo "Fetching the most recent configuration block for the channel"
-  if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
-    set -x
-    peer channel fetch config config_block.pb -o orderer.chat-network.com:7050 -c $CHANNEL --cafile $ORDERER_CA
-    set +x
-  else
-    set -x
-    peer channel fetch config config_block.pb -o orderer.chat-network.com:7050 -c $CHANNEL --tls --cafile $ORDERER_CA
-    set +x
-  fi
+	echo "Fetching the most recent configuration block for the channel"
+	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
+		set -x
+		peer channel fetch config config_block.pb -o orderer.chat-network.com:7050 -c $CHANNEL --cafile $ORDERER_CA
+		set +x
+	else
+		set -x
+		peer channel fetch config config_block.pb -o orderer.chat-network.com:7050 -c $CHANNEL --tls --cafile $ORDERER_CA
+		set +x
+	fi
 
-  echo "Decoding config block to JSON and isolating config to ${OUTPUT}"
-  set -x
-  configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > "${OUTPUT}"
-  set +x
+	echo "Decoding config block to JSON and isolating config to ${OUTPUT}"
+	set -x
+	configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > "${OUTPUT}"
+	set +x
 }
 
 # signConfigtxAsPeerOrg <org> <configtx.pb>
