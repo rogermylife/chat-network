@@ -16,6 +16,7 @@ orgID="$(tr '[:lower:]' '[:upper:]' <<< ${orgName:0:1})${orgName:1}"
 # new org's crypto-config folder
 cryptoCFGFolder="./crypto-config/newOrgs/$orgName"
 
+COMPOSE_FILE="./configs/newOrg/docker-compose-${orgName}.yaml"
 # COMPOSE_FILE=$FABRIC_CFG_PATH/docker-compose-cli.yaml
 # LANGUAGE='golang'
 # CLI_TIMEOUT=10
@@ -56,7 +57,7 @@ function generateCerts (){
 }
 
 # Generate channel configuration transaction
-function generateChannelArtifacts() {
+function generateOrgInformation() {
     which configtxgen
     if [ "$?" -ne 0 ]; then
         echo "configtxgen tool not found. exiting"
@@ -82,7 +83,7 @@ function generateChannelArtifacts() {
 
 # Use the CLI container to create the configuration transaction needed to add
 # newOrg to the network
-function createConfigTx () {
+function createSubmitAddConfigTx () {
     orgName=$1
     channelName=$2
     echo
@@ -96,19 +97,72 @@ function createConfigTx () {
     fi
 }
 
+function startPeer () {
+    COMPOSE_FILE=$1
+    IMAGE_TAG=$IMAGETAG docker-compose -f $COMPOSE_FILE up -d 2>&1
+    # start org3 peers
+    if [ $? -ne 0 ]; then
+        echo "ERROR !!!! Unable to start new org network"
+        exit 1
+    fi
+}
+
+function havePeerJoinNetwork () {
+    orgID=$1
+    channelName=$2
+    echo
+    echo "###############################################################"
+    echo "############### Have new peer join network   ##################"
+    echo "###############################################################"
+    docker exec ${orgID}cli ./scripts/havePeerJoinNetwork.sh $orgName $channelName 3 golang 10
+    if [ $? -ne 0 ]; then
+    echo "ERROR !!!! Unable to have Org3 peers join network"
+    exit 1
+    fi
+}
+
+function upgradeChaincode () {
+    orgName=$1
+    channelName=$2
+    echo
+    echo "############################################################################"
+    echo "##### Upgrade chaincode to include new org peers in endorsement policy #####"
+    echo "############################################################################"
+    docker exec cli ./scripts/upgradeChaincode.sh $orgName $channelName 3 golang 10
+    if [ $? -ne 0 ]; then
+    echo "ERROR !!!! Unable to add Org3 peers on network"
+    exit 1
+    fi
+}
 
 echo "orgName $orgName"
 echo "orgId $orgID"
 echo "cryptoCFGFolder $cryptoCFGFolder"
 
-echo "generating new org's cryto-config and configtx..."
-generateConfigs $orgName
+# echo "generating new org's cryto-config and configtx..."
+# generateConfigs $orgName
 
-echo "generating new org's crypto material..."
-generateCerts $FABRIC_CFG_PATH/${orgName}-crypto.yaml $cryptoCFGFolder
+# echo "generating new org's crypto material..."
+# generateCerts $FABRIC_CFG_PATH/${orgName}-crypto.yaml $cryptoCFGFolder
 
-echo "generating new org's config tx..."
-generateChannelArtifacts ${orgID}MSP ./channel-artifacts/newOrg/${orgName}.json 
+# echo "generating new org's information..." #include copying orderer's crypto nearby new org's crypto
+# generateOrgInformation ${orgID}MSP ./channel-artifacts/newOrg/${orgName}Info.json 
 
-# echo "creating config tx"
-# createConfigTx $orgName officialchannel
+# echo "creating and submitting new org addition config tx...."
+# createSubmitAddConfigTx $orgName officialchannel
+
+# echo "starting new org peer..."
+# startPeer $COMPOSE_FILE
+
+# echo "having new org peer join network"
+# havePeerJoinNetwork $orgID officialchannel
+
+echo "upgrading chaincode for including new org in endorsement policy..."
+upgradeChaincode $orgName officialchannel 
+
+# # finish by running the test
+# docker exec Org3cli ./scripts/testorg3.sh $CHANNEL_NAME $CLI_DELAY $LANGUAGE $CLI_TIMEOUT
+# if [ $? -ne 0 ]; then
+# echo "ERROR !!!! Unable to run test"
+# exit 1
+# fi

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+# modified by rogermylifeQ@gmail.com
 
 # This is a collection of bash functions used by different scripts
 
@@ -72,13 +73,13 @@ joinChannelWithRetry () {
 	cat log.txt
 	if [ $res -ne 0 -a $COUNTER -lt $MAX_RETRY ]; then
 		COUNTER=` expr $COUNTER + 1`
-		echo "peer${PEER}.org${ORG} failed to join the channel, Retry after $DELAY seconds"
+		echo "peer${PEER}.${ORG} failed to join the channel, Retry after $DELAY seconds"
 		sleep $DELAY
 		joinChannelWithRetry $PEER $ORG
 	else
 		COUNTER=1
 	fi
-	verifyResult $res "After $MAX_RETRY attempts, peer${PEER}.org${ORG} has failed to Join the Channel"
+	verifyResult $res "After $MAX_RETRY attempts, peer${PEER}.${ORG} has failed to Join the Channel"
 }
 
 installChaincode () {
@@ -125,15 +126,16 @@ instantiateChaincode () {
 upgradeChaincode () {
     PEER=$1
     ORG=$2
+	POLICY=$3
     setGlobals $PEER $ORG
-
     set -x
-    peer chaincode upgrade -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -v 2.0 -c '{"Args":["init","a","90","b","210"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer','Org3MSP.peer')"
+	
+    peer chaincode upgrade -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -v 2.0 -c '{"Args":["init","a","90","b","210"]}' -P "$POLICY"
     res=$?
 	set +x
     cat log.txt
-    verifyResult $res "Chaincode upgrade on org${ORG} peer${PEER} has Failed"
-    echo "===================== Chaincode is upgraded on org${ORG} peer${PEER} ===================== "
+    verifyResult $res "Chaincode upgrade on ${ORG} ${PEER} has Failed"
+    echo "===================== Chaincode is upgraded on ${ORG} peer${PEER} ===================== "
     echo
 }
 
@@ -246,4 +248,24 @@ chaincodeInvoke () {
 	verifyResult $res "Invoke execution on peer${PEER}.${ORG} failed "
 	echo "===================== Invoke transaction on peer${PEER}.${ORG} on channel '$CHANNEL_NAME' is successful ===================== "
 	echo
+}
+
+function getOrgMSPsFromCHCFGJSON () {
+	CHCFGJSON=$1
+	mapfile -t arr < <(jq '.channel_group.groups.Application.groups | keys' $CHCFGJSON )
+	orgMSPs='( '
+	for i in "${!arr[@]}"; do
+		orgMSP=${arr[$i]}
+		if [ "$orgMSP" = '[' -o "$orgMSP" = "]" ];then
+			continue
+		fi
+		if [ $i = 1 ]; then
+			orgMSP="'$(echo $orgMSP | cut -d "\"" -f2).member'"
+		else
+			orgMSP=", '$(echo $orgMSP | cut -d "\"" -f2).member' "
+		fi
+		orgMSPs="$orgMSPs${orgMSP}"
+	done
+	orgMSPs="$orgMSPs )"
+	echo $orgMSPs
 }

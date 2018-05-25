@@ -12,21 +12,20 @@
 # network previously setup in the BYFN tutorial.
 #
 
-echo
-echo "========= Finish adding Org3 to your first network ========= "
-echo
-CHANNEL_NAME="$1"
-DELAY="$2"
-LANGUAGE="$3"
-TIMEOUT="$4"
-: ${CHANNEL_NAME:="mychannel"}
+
+ORG_NAME="$1"
+CHANNEL_NAME="$2"
+DELAY="$3"
+LANGUAGE="$4"
+TIMEOUT="$5"
+: ${CHANNEL_NAME:="officialchannel"}
 : ${DELAY:="3"}
 : ${LANGUAGE:="golang"}
 : ${TIMEOUT:="10"}
 LANGUAGE=`echo "$LANGUAGE" | tr [:upper:] [:lower:]`
 COUNTER=1
 MAX_RETRY=5
-ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/chat-network.com/orderers/orderer.chat-network.com/msp/tlscacerts/tlsca.chat-network.com-cert.pem
 
 CC_SRC_PATH="github.com/chaincode/chaincode_example02/go/"
 if [ "$LANGUAGE" = "node" ]; then
@@ -36,13 +35,15 @@ fi
 # import utils
 . scripts/utils.sh
 
+# todo:
+# need to install all chaincode with all version and can specify chaincode
 echo "===================== Installing chaincode 2.0 on peer0.org1 ===================== "
-installChaincode 0 1 2.0
-echo "===================== Installing chaincode 2.0 on peer0.org2 ===================== "
-installChaincode 0 2 2.0
+installChaincode 0 official 2.0
 
 echo "===================== Upgrading chaincode on peer0.org1 ===================== "
-upgradeChaincode 0 1
+fetchChannelConfig ${CHANNEL_NAME} config.json
+policy="OR $(getOrgMSPsFromCHCFGJSON config.json)"
+upgradeChaincode 0 official "$policy"
 
 echo
 echo "========= Finished adding Org3 to your first network! ========= "
