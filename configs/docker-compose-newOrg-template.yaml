@@ -29,9 +29,9 @@ services:
         - ../../crypto-config/newOrgs/__ORGNAME__/peerOrganizations/__ORGNAME__.chat-network.com/peers/peer0.__ORGNAME__.chat-network.com/msp:/etc/hyperledger/fabric/msp
         - ../../crypto-config/newOrgs/__ORGNAME__/peerOrganizations/__ORGNAME__.chat-network.com/peers/peer0.__ORGNAME__.chat-network.com/tls:/etc/hyperledger/fabric/tls
         - peer0.__ORGNAME__.chat-network.com:/var/hyperledger/production
-    ports:
-      - 11051:7051
-      - 11053:7053
+    # ports:
+    #   - 11051:7051
+    #   - 11053:7053
     networks:
       - chat-network
 

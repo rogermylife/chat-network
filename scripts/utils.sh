@@ -230,17 +230,25 @@ createConfigUpdate() {
 chaincodeInvoke () {
 	PEER=$1
 	ORG=$2
+	method=$3
+	: ${method:="minus"}
 	setGlobals $PEER $ORG
 	# while 'peer chaincode' command can get the orderer endpoint from the peer (if join was successful),
 	# lets supply it directly as we know it using the "-o" option
+
+	if [ $method = 'minus' ]; then
+		ctor='{"Args":["invoke","a","b","10"]}'
+	elif [ $method = 'plus' ]; then
+		ctor='{"Args":["invoke","b","a","10"]}'
+	fi
 	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
                 set -x
-		peer chaincode invoke -o orderer.chat-network.com:7050 -C $CHANNEL_NAME -n mycc -c '{"Args":["invoke","a","b","10"]}' >&log.txt
+		peer chaincode invoke -o orderer.chat-network.com:7050 -C $CHANNEL_NAME -n mycc -c "$cons" >&log.txt
 		res=$?
                 set +x
 	else
                 set -x
-		peer chaincode invoke -o orderer.chat-network.com:7050  --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -c '{"Args":["invoke","a","b","10"]}' >&log.txt
+		peer chaincode invoke -o orderer.chat-network.com:7050  --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -c "$ctor" >&log.txt
 		res=$?
                 set +x
 	fi

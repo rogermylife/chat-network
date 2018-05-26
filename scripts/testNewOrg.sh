@@ -44,8 +44,9 @@ echo "Channel name : "$CHANNEL_NAME
 . scripts/utils.sh
 env | grep CORE
 chaincodeQuery 0 $ORG_NAME 90
-chaincodeInvoke 0 $ORG_NAME
+chaincodeInvoke 0 $ORG_NAME minus
 chaincodeQuery 0 $ORG_NAME 80
+chaincodeInvoke 0 $ORG_NAME plus
 
 echo
 echo "========= All GOOD, EYFN test execution completed =========== "

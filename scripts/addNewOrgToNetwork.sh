@@ -60,7 +60,7 @@ set +x
 createConfigUpdate ${CHANNEL_NAME} $channelCFGJSON $modifiedChannelCFGJSON $orgUpdateEnvelope
 
 echo
-echo "========= Config transaction to add org3 to network created ===== "
+echo "========= Config transaction to add $orgName to network created ===== "
 echo
 
 echo "Signing config transaction"
