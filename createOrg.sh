@@ -112,12 +112,13 @@ function havePeerJoinNetwork () {
     channelName=$2
     echo
     echo "###############################################################"
-    echo "############### Have new peer join network   ##################"
+    echo "############### Have new peer join channel   ##################"
     echo "###############################################################"
-    docker exec ${orgID}cli ./scripts/havePeerJoinNetwork.sh $orgName $channelName 3 golang 10
+    # exit 1
+    docker exec ${orgID}cli ./scripts/havePeerJoinChannel.sh $orgName $channelName 3 golang 10
     if [ $? -ne 0 ]; then
-    echo "ERROR !!!! Unable to have Org3 peers join network"
-    exit 1
+        echo "ERROR !!!! Unable to have Org3 peers join network"
+        exit 1
     fi
 }
 
@@ -135,34 +136,41 @@ function upgradeChaincode () {
     fi
 }
 
+function testNewOrg (){
+    orgName=$1
+    orgID=$2
+    docker exec ${orgID}cli ./scripts/testNewOrg.sh $orgName officialchannel 3 golang 10
+    if [ $? -ne 0 ]; then
+    echo "ERROR !!!! Unable to run test"
+    exit 1
+    fi
+}
+
 echo "orgName $orgName"
 echo "orgId $orgID"
 echo "cryptoCFGFolder $cryptoCFGFolder"
 
-# echo "generating new org's cryto-config and configtx..."
-# generateConfigs $orgName
+echo "generating new org's cryto-config and configtx..."
+generateConfigs $orgName
 
-# echo "generating new org's crypto material..."
-# generateCerts $FABRIC_CFG_PATH/${orgName}-crypto.yaml $cryptoCFGFolder
+echo "generating new org's crypto material..."
+generateCerts $FABRIC_CFG_PATH/${orgName}-crypto.yaml $cryptoCFGFolder
 
-# echo "generating new org's information..." #include copying orderer's crypto nearby new org's crypto
-# generateOrgInformation ${orgID}MSP ./channel-artifacts/newOrg/${orgName}Info.json 
+echo "generating new org's information..." #include copying orderer's crypto nearby new org's crypto
+generateOrgInformation ${orgID}MSP ./channel-artifacts/newOrg/${orgName}Info.json 
 
-# echo "creating and submitting new org addition config tx...."
-# createSubmitAddConfigTx $orgName officialchannel
+echo "creating and submitting new org addition config tx...."
+createSubmitAddConfigTx $orgName officialchannel
 
-# echo "starting new org peer..."
-# startPeer $COMPOSE_FILE
+echo "starting new org peer..."
+startPeer $COMPOSE_FILE
 
-# echo "having new org peer join network"
-# havePeerJoinNetwork $orgID officialchannel
+echo "having new org peer join network"
+havePeerJoinNetwork $orgID officialchannel
 
 echo "upgrading chaincode for including new org in endorsement policy..."
 upgradeChaincode $orgName officialchannel 
 
-# # finish by running the test
-# docker exec Org3cli ./scripts/testorg3.sh $CHANNEL_NAME $CLI_DELAY $LANGUAGE $CLI_TIMEOUT
-# if [ $? -ne 0 ]; then
-# echo "ERROR !!!! Unable to run test"
-# exit 1
-# fi
+# finish by running the test
+echo "testing new org"
+testNewOrg $orgName $orgID

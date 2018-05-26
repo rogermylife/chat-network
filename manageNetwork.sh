@@ -164,7 +164,8 @@ function networkUp () {
 }
 
 function networkDown () {
-  docker-compose -f $COMPOSE_FILE down --volumes
+  docker-compose -f $COMPOSE_FILE  down --volumes --remove-orphans
+  docker volume prune -f
   # Don't remove the generated artifacts -- note, the ledgers are always removed
   # if [ "$MODE" != "restart" ]; then
   # Bring down the network, deleting the volumes
