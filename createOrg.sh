@@ -16,15 +16,66 @@ orgID="$(tr '[:lower:]' '[:upper:]' <<< ${orgName:0:1})${orgName:1}"
 # new org's crypto-config folder
 cryptoCFGFolder="./crypto-config/newOrgs/$orgName"
 
-COMPOSE_FILE="./configs/newOrg/docker-compose-${orgName}.yaml"
-# COMPOSE_FILE=$FABRIC_CFG_PATH/docker-compose-cli.yaml
-# LANGUAGE='golang'
-# CLI_TIMEOUT=10
-# CLI_DELAY=3
-# BLACKLISTED_VERSIONS="^1\.0\. ^1\.1\.0-preview ^1\.1\.0-alpha"
+cryptoFile="./configs/newOrg/crypto-config-${orgName}.yaml"
+cryptoFileTpl="./configs/crypto-config-newOrg-template.yaml"
 
-function generateConfigs (){
+composeFile="./configs/newOrg/docker-compose-${orgName}.yaml"
+composeFileTpl="./configs/docker-compose-newOrg-template.yaml"
+
+configtxTpl="./configs/configtx-template.yaml"
+configtx="./configs/newOrg/configtx.yaml"
+
+function generateConfigs () {
     orgName=$1
+    orgID=$2
+    # sed on MacOSX does not support -i flag with a null extension. We will use
+    # 't' for our back-up's extension and depete it at the end of the function
+    ARCH=`uname -s | grep Darwin`
+    if [ "$ARCH" == "Darwin" ]; then
+        OPTS="-it"
+    else
+        OPTS="-i"
+    fi
+    
+    echo
+    echo "============== generating $cryptoFile =============="
+    echo
+
+    # Copy the template to the file that will be modified to organization information
+    cp $cryptoFileTpl $cryptoFile
+
+    # Change to orgName and orgID
+    sed $OPTS "s/__ORGNAME__/${orgName}/g" $cryptoFile
+    sed $OPTS "s/__ORGID__/${orgID}/g" $cryptoFile
+
+    # If MacOSX, remove the temporary backup of the docker-compose file
+    if [ "$ARCH" == "Darwin" ]; then
+        rm "${cryptoFile}t"
+    fi
+    
+    
+    echo
+    echo "============== generating $composeFile =============="
+    echo
+
+    cp $composeFileTpl $composeFile
+    sed $OPTS "s/__ORGNAME__/${orgName}/g" $composeFile
+    sed $OPTS "s/__ORGID__/${orgID}/g" $composeFile
+    if [ "$ARCH" == "Darwin" ]; then
+        rm "${composeFile}t"
+    fi
+
+    echo
+    echo "============== generating configtx.yaml =============="
+    echo
+    cp $configtxTpl $configtx
+    sed $OPTS "s/__ORGNAME__/${orgName}/g" $configtx
+    sed $OPTS "s/__ORGID__/${orgID}/g" $configtx
+    if [ "$ARCH" == "Darwin" ]; then
+        rm "${configtx}t"
+    fi
+
+
 }
 
 function generateCerts (){
@@ -81,6 +132,7 @@ function generateOrgInformation() {
     echo
 }
 
+
 # Use the CLI container to create the configuration transaction needed to add
 # newOrg to the network
 function createSubmitAddConfigTx () {
@@ -98,8 +150,8 @@ function createSubmitAddConfigTx () {
 }
 
 function startPeer () {
-    COMPOSE_FILE=$1
-    IMAGE_TAG=$IMAGETAG docker-compose -f $COMPOSE_FILE up -d 2>&1
+    composeFile=$1
+    IMAGE_TAG=$IMAGETAG docker-compose -f $composeFile up -d 2>&1
     # start org3 peers
     if [ $? -ne 0 ]; then
         echo "ERROR !!!! Unable to start new org network"
@@ -151,10 +203,10 @@ echo "orgId $orgID"
 echo "cryptoCFGFolder $cryptoCFGFolder"
 
 echo "generating new org's cryto-config and configtx..."
-generateConfigs $orgName
+generateConfigs $orgName $orgID
 
 echo "generating new org's crypto material..."
-generateCerts $FABRIC_CFG_PATH/${orgName}-crypto.yaml $cryptoCFGFolder
+generateCerts $cryptoFile $cryptoCFGFolder
 
 echo "generating new org's information..." #include copying orderer's crypto nearby new org's crypto
 generateOrgInformation ${orgID}MSP ./channel-artifacts/newOrg/${orgName}Info.json 
@@ -163,7 +215,7 @@ echo "creating and submitting new org addition config tx...."
 createSubmitAddConfigTx $orgName officialchannel
 
 echo "starting new org peer..."
-startPeer $COMPOSE_FILE
+startPeer $composeFile
 
 echo "having new org peer join network"
 havePeerJoinNetwork $orgID officialchannel
