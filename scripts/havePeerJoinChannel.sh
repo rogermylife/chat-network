@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# modified by rogermylifeQ@gmail.com
+# modified by rogermylife
 
 # This script is designed to be run in the new org container 
 # It joins the new peer to the official channel previously setup 
@@ -57,7 +57,7 @@ echo "Installing chaincode 2.0 on peer0.org3..."
 installChaincode 0 $ORG_NAME 2.0
 
 echo
-echo "========= $ORG_NAME get in channel $CHANNEL_NAME ========= "
+echo "========= peer0.$ORG_NAME get in channel $CHANNEL_NAME ========= "
 echo
 
 exit 0

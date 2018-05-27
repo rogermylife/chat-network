@@ -25,6 +25,8 @@ composeFileTpl="./configs/docker-compose-newOrg-template.yaml"
 configtxTpl="./configs/configtx-template.yaml"
 configtx="./configs/newOrg/configtx.yaml"
 
+orgInfoJSON="./channel-artifacts/newOrg/${orgName}Info.json"
+
 function generateConfigs () {
     orgName=$1
     orgID=$2
@@ -128,7 +130,6 @@ function generateOrgInformation() {
         echo "Failed to generate Org3 config material..."
         exit 1
     fi
-    cp -r crypto-config/ordererOrganizations $cryptoCFGFolder
     echo
 }
 
@@ -140,7 +141,7 @@ function createSubmitAddConfigTx () {
     channelName=$2
     echo
     echo "###############################################################"
-    echo "####### Generate and submit config tx to add Org3 #############"
+    echo "####### Generate and submit config tx to add new Org ##########"
     echo "###############################################################"
     docker exec cli scripts/addNewOrgToNetwork.sh $orgName $channelName 3 golang 10
     if [ $? -ne 0 ]; then
@@ -183,7 +184,7 @@ function upgradeChaincode () {
     echo "############################################################################"
     docker exec cli ./scripts/upgradeChaincode.sh $orgName $channelName 3 golang 10
     if [ $? -ne 0 ]; then
-    echo "ERROR !!!! Unable to add Org3 peers on network"
+    echo "ERROR !!!! Unable to add new peers on network"
     exit 1
     fi
 }
@@ -202,24 +203,46 @@ echo "orgName $orgName"
 echo "orgId $orgID"
 echo "cryptoCFGFolder $cryptoCFGFolder"
 
-echo "generating new org's cryto-config and configtx..."
+# generate important config files as below
+# crypto-config.yaml    -> for generating crypto things
+# composefile.yaml      -> for docker to up the container
+# configtx.yaml         -> for generating a tx that provides some new org's
+#                          information including new org's MSP
+echo "generating new org's cryto-config, docker-compose-file and configtx..."
 generateConfigs $orgName $orgID
 
+# use $cryptoFile(crypto-config.yaml) to generate crypto
+# crypto -> the things that represent the newOrg
+# cryptoCFGFolder   : the folder will contains crypto(lots of files) based on cryptoFile
 echo "generating new org's crypto material..."
 generateCerts $cryptoFile $cryptoCFGFolder
 
-echo "generating new org's information..." #include copying orderer's crypto nearby new org's crypto
-generateOrgInformation ${orgID}MSP ./channel-artifacts/newOrg/${orgName}Info.json 
+# generate new org's info in json
+# use configtxgen -printOrg
+# While modifying a channel config to include new org info, we need this json file.
+# $1    : the org name in configtx.yaml
+# $2    : the info json file name
+echo "generating new org's information..." 
+generateOrgInformation ${orgID}MSP $orgInfoJSON
 
-echo "creating and submitting new org addition config tx...."
+# create a tx which make new org add to network's official channel
+# In this step, we use $orgInfoJSON file generated previously
+# to modify channel config and generate a channel update tx.
+# Before tx is submitted, it must be signed by all peers in channel
+# So when channel update tx is submitted, the new org is added in channel config.
+echo "creating and submitting new org's addition to network config tx...."
 createSubmitAddConfigTx $orgName officialchannel
 
+# use composefile to start new org peer
 echo "starting new org peer..."
 startPeer $composeFile
 
+# make peer itself get in the network's channel
+# and install chaincode with current version plus 1 todo
 echo "having new org peer join network"
 havePeerJoinNetwork $orgID officialchannel
 
+# upgrade other peers and edorsement policy todo
 echo "upgrading chaincode for including new org in endorsement policy..."
 upgradeChaincode $orgName officialchannel 
 

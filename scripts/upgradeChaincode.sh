@@ -36,7 +36,7 @@ fi
 . scripts/utils.sh
 
 # todo:
-# need to install all chaincode with all version and can specify chaincode
+# need to install chaincode on all peers in channel and can specify chaincode
 echo "===================== Installing chaincode 2.0 on peer0.org1 ===================== "
 installChaincode 0 official 2.0
 

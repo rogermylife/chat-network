@@ -4,13 +4,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# modified by rogermylifeQ@gmail.com
+# modified by rogermylife
 
-# This script is designed to be run in the org3cli container as the
-# first step of the EYFN tutorial.  It creates and submits a
-# configuration transaction to add org3 to the network previously
-# setup in the BYFN tutorial.
+# This script creates and submits a configuration transaction 
+# to add new org  to the network previously setup.
 #
+
 ORG_NAME="$1"
 ORG_ID="$(tr '[:lower:]' '[:upper:]' <<< ${ORG_NAME:0:1})${ORG_NAME:1}" 
 CHANNEL_NAME="$2"
@@ -52,11 +51,11 @@ fetchChannelConfig ${CHANNEL_NAME} $channelCFGJSON
 
 # Modify the configuration to append the new org
 set -x
-# jq -s '.[0] * {"channel_group":{"groups":{"Application":{"groups": {"${ORG_ID}3MSP":.[1]}}}}}' config.json ./channel-artifacts/$channelCFGJSON > modified_config.json
 jq -s ".[0] * {\"channel_group\":{\"groups\":{\"Application\":{\"groups\": {\"${ORG_ID}MSP\":.[1]}}}}}" $channelCFGJSON $orgInfo > $modifiedChannelCFGJSON
 set +x
 
-# Compute a config update, based on the differences between config.json and modified_config.json, write it as a transaction to org3_update_in_envelope.pb
+# Compute a config update, based on the differences between config.json and modified_config.json, 
+# write it as a transaction to $orgUpdateEnvelope
 createConfigUpdate ${CHANNEL_NAME} $channelCFGJSON $modifiedChannelCFGJSON $orgUpdateEnvelope
 
 echo
@@ -65,6 +64,7 @@ echo
 
 echo "Signing config transaction"
 echo
+#todo : need everyone in channel sign it
 signConfigtxAsPeerOrg official $orgUpdateEnvelope
 
 echo
@@ -75,8 +75,10 @@ set -x
 peer channel update -f $orgUpdateEnvelope -c ${CHANNEL_NAME} -o orderer.chat-network.com:7050 --tls --cafile ${ORDERER_CA}
 set +x
 
+rm -f $channelCFGJSON $modifiedChannelCFGJSON $orgUpdateEnvelope
+
 echo
-echo "========= Config transaction to add org3 to network submitted! =========== "
+echo "========= Config transaction to add new org to network submitted! =========== "
 echo
 
 exit 0
