@@ -167,7 +167,7 @@ function havePeerJoinNetwork () {
     echo "############### Have new peer join channel   ##################"
     echo "###############################################################"
     # exit 1
-    docker exec ${orgID}cli ./scripts/havePeerJoinChannel.sh $orgName $channelName 3 golang 10
+    docker exec cli ./scripts/havePeerJoinChannel.sh $orgName $channelName 3 golang 10
     if [ $? -ne 0 ]; then
         echo "ERROR !!!! Unable to have Org3 peers join network"
         exit 1
@@ -191,7 +191,7 @@ function upgradeChaincode () {
 function testNewOrg (){
     orgName=$1
     orgID=$2
-    docker exec ${orgID}cli ./scripts/testNewOrg.sh $orgName officialchannel 3 golang 10
+    docker exec cli ./scripts/testNewOrg.sh $orgName officialchannel 3 golang 10
     if [ $? -ne 0 ]; then
     echo "ERROR !!!! Unable to run test"
     exit 1

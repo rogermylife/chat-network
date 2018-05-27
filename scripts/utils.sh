@@ -29,9 +29,15 @@ setGlobals () {
 	PEER=$1
 	ORG=$2
 	ORGID="$(tr '[:lower:]' '[:upper:]' <<< ${ORG:0:1})${ORG:1}"
+	if [ $ORG = "official" ]; then
+		peerOrgPath="/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations"
+	else
+		peerOrgPath="/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/newOrgs/$ORG/peerOrganizations"
+	fi
 	CORE_PEER_LOCALMSPID="${ORGID}MSP"
-	CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/$ORG.chat-network.com/peers/peer$PEER.$ORG.chat-network.com/tls/ca.crt
-	CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/$ORG.chat-network.com/users/Admin@$ORG.chat-network.com/msp
+	CORE_PEER_TLS_ROOTCERT_FILE=$peerOrgPath/$ORG.chat-network.com/peers/peer$PEER.$ORG.chat-network.com/tls/ca.crt
+	CORE_PEER_TLS_ROOTCERT_FILE=$peerOrgPath/$ORG.chat-network.com/peers/peer$PEER.$ORG.chat-network.com/tls/ca.crt
+	CORE_PEER_MSPCONFIGPATH=$peerOrgPath/$ORG.chat-network.com/users/Admin@$ORG.chat-network.com/msp
 	CORE_PEER_ADDRESS=peer$PEER.$ORG.chat-network.com:7051
 	env |grep CORE
 }
