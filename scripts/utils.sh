@@ -283,3 +283,33 @@ function getOrgMSPsFromCHCFGJSON () {
 	orgMSPs="$orgMSPs )"
 	echo $orgMSPs
 }
+
+function getOrgNamesFromCHCFGJSON () {
+	CHCFGJSON=$1
+	orgNames=$2
+	orgNames=()
+	mapfile -t arr < <(jq '.channel_group.groups.Application.groups | keys' $CHCFGJSON )
+	for i in "${!arr[@]}"; do
+		orgMSP=${arr[$i]}
+		if [ "$orgMSP" = '[' -o "$orgMSP" = "]" ];then
+			continue
+		fi
+		orgMSP="$(echo $orgMSP | cut -d "\"" -f2)"
+		l=${#orgMSP}
+		l=$(($l-3))
+		# trim "MSP" in the end of orgMSP
+		orgName=${orgMSP:0:l}
+		# lower first letter
+		orgName="$(tr '[:upper:]' '[:lower:]' <<< ${orgName:0:1})${orgName:1}" 
+		orgNames+=($orgName)
+	done
+}
+function signConfigtxInChannel () {
+	CHCFGJSON=$1
+	orgUpdateEnvelope=$2
+	orgNames=()
+	getOrgNamesFromCHCFGJSON $CHCFGJSON $orgNames
+	for orgName in "${orgNames[@]}"; do
+		signConfigtxAsPeerOrg $orgName $orgUpdateEnvelope
+	done
+}

@@ -65,7 +65,8 @@ echo
 echo "Signing config transaction"
 echo
 #todo : need everyone in channel sign it
-signConfigtxAsPeerOrg official $orgUpdateEnvelope
+signConfigtxInChannel $channelCFGJSON $orgUpdateEnvelope
+# signConfigtxAsPeerOrg official $orgUpdateEnvelope
 
 echo
 echo "========= Submitting transaction from peer0.official  ========= "
@@ -75,7 +76,7 @@ set -x
 peer channel update -f $orgUpdateEnvelope -c ${CHANNEL_NAME} -o orderer.chat-network.com:7050 --tls --cafile ${ORDERER_CA}
 set +x
 
-rm -f $channelCFGJSON $modifiedChannelCFGJSON $orgUpdateEnvelope
+# rm -f $channelCFGJSON $modifiedChannelCFGJSON $orgUpdateEnvelope
 
 echo
 echo "========= Config transaction to add new org to network submitted! =========== "
