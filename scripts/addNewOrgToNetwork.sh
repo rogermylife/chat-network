@@ -37,8 +37,8 @@ echo
 echo "========= Creating config transaction to add $ORG_NAME to network =========== "
 echo
 
-echo "Installing jq"
-apt-get -y update && apt-get -y install jq
+echo "Installing jq and bc"
+apt-get -y update && apt-get -y install jq && apt-get -y install bc
 
 channelCFGJSON=${CHANNEL_NAME}_CHCFG.json
 modifiedChannelCFGJSON=modified_$channelCFGJSON

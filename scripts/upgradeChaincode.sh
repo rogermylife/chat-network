@@ -37,10 +37,10 @@ fi
 
 # todo:
 # need to install chaincode on all peers in channel and can specify chaincode
-echo "===================== Installing chaincode 2.0 on peer0.org1 ===================== "
+echo "===================== Installing chaincode 2.0 on peer0.$ORG_NAME ===================== "
 installChaincode 0 official 2.0
 
-echo "===================== Upgrading chaincode on peer0.org1 ===================== "
+echo "===================== Upgrading chaincode on peer0.$ORG_NAME ===================== "
 fetchChannelConfig ${CHANNEL_NAME} config.json
 policy="OR $(getOrgMSPsFromCHCFGJSON config.json)"
 upgradeChaincode 0 official "$policy"

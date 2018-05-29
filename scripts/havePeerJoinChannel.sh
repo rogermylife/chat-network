@@ -49,12 +49,22 @@ set +x
 cat log.txt
 verifyResult $res "Fetching config block from orderer has Failed"
 
-echo "===================== Having peer0.org3 join the channel ===================== "
+echo "===================== Having peer0.$ORG_NAME join the channel ===================== "
 joinChannelWithRetry 0 $ORG_NAME
-echo "===================== peer0.org3 joined the channel \"$CHANNEL_NAME\" ===================== "
+echo "===================== peer0.$ORG_NAME joined the channel \"$CHANNEL_NAME\" ===================== "
 
-echo "Installing chaincode 2.0 on peer0.org3..."
-installChaincode 0 $ORG_NAME 2.0
+# maybe need sometimes to let all peers sync
+echo "===================== sleeping for syncing everyone ====================="
+sleep 10
+
+echo "Installing chaincode current version pluse 1 on peer0.$ORG_NAME..."
+
+
+
+ccVersion=
+getInstantiaedCcVer mycc $CHANNEL_NAME $ORG_NAME $ccVersion
+ccVersion=$(bc <<<"scale=1; $ccVersion+1.0")
+installChaincode 0 $ORG_NAME ${ccVersion}
 
 echo
 echo "========= peer0.$ORG_NAME get in channel $CHANNEL_NAME ========= "

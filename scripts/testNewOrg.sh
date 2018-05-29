@@ -18,7 +18,7 @@ echo "\___ \    | |     / _ \   | |_) |   | |  "
 echo " ___) |   | |    / ___ \  |  _ <    | |  "
 echo "|____/    |_|   /_/   \_\ |_| \_\   |_|  "
 echo
-echo "Extend your first network (EYFN) test"
+echo "new Org test"
 echo
 ORG_NAME="$1"
 CHANNEL_NAME="$2"
@@ -49,7 +49,7 @@ chaincodeQuery 0 $ORG_NAME 80
 chaincodeInvoke 0 $ORG_NAME plus
 
 echo
-echo "========= All GOOD, EYFN test execution completed =========== "
+echo "========= All GOOD, $ORG_NAME test execution completed =========== "
 echo
 
 echo

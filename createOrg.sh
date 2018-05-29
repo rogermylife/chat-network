@@ -167,7 +167,6 @@ function havePeerJoinNetwork () {
     echo "###############################################################"
     echo "############### Have new peer join channel   ##################"
     echo "###############################################################"
-    # exit 1
     docker exec cli ./scripts/havePeerJoinChannel.sh $orgName $channelName 3 golang 10
     if [ $? -ne 0 ]; then
         echo "ERROR !!!! Unable to have Org3 peers join network"

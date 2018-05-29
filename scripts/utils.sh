@@ -304,6 +304,7 @@ function getOrgNamesFromCHCFGJSON () {
 		orgNames+=($orgName)
 	done
 }
+
 function signConfigtxInChannel () {
 	CHCFGJSON=$1
 	orgUpdateEnvelope=$2
@@ -312,4 +313,16 @@ function signConfigtxInChannel () {
 	for orgName in "${orgNames[@]}"; do
 		signConfigtxAsPeerOrg $orgName $orgUpdateEnvelope
 	done
+}
+
+# get current instantiated chaincode version
+# $4 ccVersion	: return value
+function getInstantiaedCcVer () {
+	
+	cc=$1
+	channelName=$2
+	orgName=$3
+	ccVersion=$4
+
+	ccVersion=$( setGlobals 0 $orgName > /dev/null 2>&1 && peer chaincode list --instantiated -C $channelName | grep $cc | cut -d "," -f2 | cut -d ":" -f2) 
 }
