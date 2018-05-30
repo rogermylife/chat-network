@@ -7,8 +7,7 @@
 # modified by rogermylife
 
 # This script is designed to be run in the new org container 
-# It joins the new peer to the official channel previously setup 
-# and install the chaincode as version 2.0 on peer0.newOrg.
+# It joins the new peer to the official channel previously setup.
 #
 
 ORG_NAME="$1"
@@ -41,7 +40,7 @@ fi
 # import utils
 . scripts/utils.sh
 
-echo "Fetching channel config block from orderer..."
+echo "Fetching channel genesis config block from orderer..."
 set -x
 peer channel fetch 0 $CHANNEL_NAME.block -o orderer.chat-network.com:7050 -c $CHANNEL_NAME --tls --cafile $ORDERER_CA >&log.txt
 res=$?
@@ -52,19 +51,6 @@ verifyResult $res "Fetching config block from orderer has Failed"
 echo "===================== Having peer0.$ORG_NAME join the channel ===================== "
 joinChannelWithRetry 0 $ORG_NAME
 echo "===================== peer0.$ORG_NAME joined the channel \"$CHANNEL_NAME\" ===================== "
-
-# maybe need sometimes to let all peers sync
-echo "===================== sleeping for syncing everyone ====================="
-sleep 10
-
-echo "Installing chaincode current version pluse 1 on peer0.$ORG_NAME..."
-
-
-
-ccVersion=
-getInstantiaedCcVer mycc $CHANNEL_NAME $ORG_NAME $ccVersion
-ccVersion=$(bc <<<"scale=1; $ccVersion+1.0")
-installChaincode 0 $ORG_NAME ${ccVersion}
 
 echo
 echo "========= peer0.$ORG_NAME get in channel $CHANNEL_NAME ========= "

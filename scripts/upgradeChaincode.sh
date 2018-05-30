@@ -4,20 +4,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+# modified by rogermylife
 
-# This script is designed to be run in the cli container as the third
-# step of the EYFN tutorial. It installs the chaincode as version 2.0
-# on peer0.org1 and peer0.org2, and uprage the chaincode on the
-# channel to version 2.0, thus completing the addition of org3 to the
-# network previously setup in the BYFN tutorial.
+# This script is designed to be run in the cli container.
+# It installs the chaincode as newer version on all peers
+# in channel, and uprage the chaincode on the channel to newer version,
+# thus completing the addition of new org to the network
+# previously setup ..
 #
 
 
 ORG_NAME="$1"
 CHANNEL_NAME="$2"
-DELAY="$3"
-LANGUAGE="$4"
-TIMEOUT="$5"
+CC="$3"
+DELAY="$4"
+LANGUAGE="$5"
+TIMEOUT="$6"
 : ${CHANNEL_NAME:="officialchannel"}
 : ${DELAY:="3"}
 : ${LANGUAGE:="golang"}
@@ -35,18 +37,29 @@ fi
 # import utils
 . scripts/utils.sh
 
-# todo:
-# need to install chaincode on all peers in channel and can specify chaincode
-echo "===================== Installing chaincode 2.0 on peer0.$ORG_NAME ===================== "
-installChaincode 0 official 2.0
+echo "===================== sleeping for syncing everyone ====================="
+sleep 10
 
-echo "===================== Upgrading chaincode on peer0.$ORG_NAME ===================== "
-fetchChannelConfig ${CHANNEL_NAME} config.json
-policy="OR $(getOrgMSPsFromCHCFGJSON config.json)"
-upgradeChaincode 0 official "$policy"
+ccVersion=
+getInstantiaedCcVer $CC $CHANNEL_NAME $ORG_NAME $ccVersion
+ccVersion=$(bc <<<"scale=1; $ccVersion+1.0")
+echo "===================== Installing chaincode $ccVersion on all peers in channel $CHANNEL_NAME ===================== "
+CHCFGJSON=config.json
+fetchChannelConfig ${CHANNEL_NAME} $CHCFGJSON
+orgNames=
+getOrgNamesFromCHCFGJSON $CHCFGJSON $orgNames
+for orgName in "${orgNames[@]}"; do
+	installChaincode 0 $orgName mycc $CC_SRC_PATH $ccVersion
+done
+
+
+echo "===================== Upgrading instantiated chaincode on peer0.${orgNames[0]}(creater) ===================== "
+fetchChannelConfig ${CHANNEL_NAME} $CHCFGJSON
+policy="OR $(getOrgMSPsFromCHCFGJSON $CHCFGJSON)"
+upgradeChaincode 0 ${orgNames[0]} mycc $ccVersion $CC_SRC_PATH "$policy"
 
 echo
-echo "========= Finished adding Org3 to your first network! ========= "
+echo "========= Finished adding $ORG_NAME to your first network! ========= "
 echo
 
 exit 0

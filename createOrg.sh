@@ -30,6 +30,7 @@ orgInfoJSON="./channel-artifacts/newOrg/${orgName}Info.json"
 function generateConfigs () {
     orgName=$1
     orgID=$2
+
     # sed on MacOSX does not support -i flag with a null extension. We will use
     # 't' for our back-up's extension and depete it at the end of the function
     ARCH=`uname -s | grep Darwin`
@@ -39,6 +40,8 @@ function generateConfigs () {
         OPTS="-i"
     fi
     
+    # Generate crypto config file (YAML)
+    # Use this file to generate new org's crypto materials
     echo
     echo "============== generating $cryptoFile =============="
     echo
@@ -55,7 +58,7 @@ function generateConfigs () {
         rm "${cryptoFile}t"
     fi
     
-    
+    # Generate new org's compose file
     echo
     echo "============== generating $composeFile =============="
     echo
@@ -67,6 +70,8 @@ function generateConfigs () {
         rm "${composeFile}t"
     fi
 
+    # Generate configtx.yaml
+    # configtxgen needs it
     echo
     echo "============== generating configtx.yaml =============="
     echo
@@ -169,19 +174,20 @@ function havePeerJoinNetwork () {
     echo "###############################################################"
     docker exec cli ./scripts/havePeerJoinChannel.sh $orgName $channelName 3 golang 10
     if [ $? -ne 0 ]; then
-        echo "ERROR !!!! Unable to have Org3 peers join network"
+        echo "ERROR !!!! Unable to have new org $orgName peers join network"
         exit 1
     fi
 }
 
-function upgradeChaincode () {
+function upgradeChaincodeInChannel () {
     orgName=$1
     channelName=$2
+    cc=$3
     echo
     echo "############################################################################"
     echo "##### Upgrade chaincode to include new org peers in endorsement policy #####"
     echo "############################################################################"
-    docker exec cli ./scripts/upgradeChaincode.sh $orgName $channelName 3 golang 10
+    docker exec cli ./scripts/upgradeChaincode.sh $orgName $channelName $cc 3 golang 10
     if [ $? -ne 0 ]; then
     echo "ERROR !!!! Unable to add new peers on network"
     exit 1
@@ -237,13 +243,13 @@ echo "starting new org peer..."
 startPeer $composeFile
 
 # make peer itself get in the network's channel
-# and install chaincode with current version plus 1 todo
 echo "having new org peer join network"
 havePeerJoinNetwork $orgID officialchannel
 
-# upgrade other peers and edorsement policy todo
+# make all peers install chaincode with new version
+# and make creater of channel update the edorsement policy
 echo "upgrading chaincode for including new org in endorsement policy..."
-upgradeChaincode $orgName officialchannel 
+upgradeChaincodeInChannel $orgName officialchannel mycc
 
 # finish by running the test
 echo "testing new org"

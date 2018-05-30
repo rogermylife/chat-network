@@ -88,11 +88,11 @@ updateAnchorPeers 0 official
 
 ## Install chaincode on peer0.org1 and peer0.org2
 echo "Installing chaincode on peer0.official..."
-installChaincode 0 official
+installChaincode 0 official mycc $CC_SRC_PATH
 
 # Instantiate chaincode on peer0.org2
 echo "Instantiating chaincode on peer0.org2..."
-instantiateChaincode 0 official
+instantiateChaincode 0 official mycc '{"Args":["init","a","100","b","200"]}' "AND ('OfficialMSP.peer')" 1.0
 
 # Query chaincode on peer0.org1
 echo "Querying chaincode on peer0.org1..."

@@ -37,8 +37,6 @@ echo
 echo "========= Creating config transaction to add $ORG_NAME to network =========== "
 echo
 
-echo "Installing jq and bc"
-apt-get -y update && apt-get -y install jq && apt-get -y install bc
 
 channelCFGJSON=${CHANNEL_NAME}_CHCFG.json
 modifiedChannelCFGJSON=modified_$channelCFGJSON
@@ -64,22 +62,19 @@ echo
 
 echo "Signing config transaction"
 echo
-#todo : need everyone in channel sign it
+# Make all peers in channel sign the configtx
+# So that new peer can be added to channel duo to everyone's agreement
 signConfigtxInChannel $channelCFGJSON $orgUpdateEnvelope
-# signConfigtxAsPeerOrg official $orgUpdateEnvelope
 
 echo
 echo "========= Submitting transaction from peer0.official  ========= "
 echo
-setGlobals 0 official
-set -x
-peer channel update -f $orgUpdateEnvelope -c ${CHANNEL_NAME} -o orderer.chat-network.com:7050 --tls --cafile ${ORDERER_CA}
-set +x
+updateChannel 0 official $CHANNEL_NAME $orgUpdateEnvelope
 
-# rm -f $channelCFGJSON $modifiedChannelCFGJSON $orgUpdateEnvelope
+rm -f $channelCFGJSON $modifiedChannelCFGJSON $orgUpdateEnvelope
 
 echo
-echo "========= Config transaction to add new org to network submitted! =========== "
+echo "========= Config transaction to add new org $ORG_NAME to network submitted! =========== "
 echo
 
 exit 0

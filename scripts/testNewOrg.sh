@@ -4,11 +4,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+# modified by rogermylife
 
-# This script is designed to be run in the org3cli container as the
-# final step of the EYFN tutorial. It simply issues a couple of
-# chaincode requests through the org3 peers to check that org3 was
-# properly added to the network previously setup in the BYFN tutorial.
+# This script is designed to be run in the cli container as the
+# final step of creating new org. It simply issues a couple of
+# chaincode requests through the new org peer to check that new org was
+# properly added to the network previously setup.
 #
 
 echo

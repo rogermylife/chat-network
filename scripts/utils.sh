@@ -7,6 +7,7 @@
 
 # This is a collection of bash functions used by different scripts
 
+ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/chat-network.com/orderers/orderer.chat-network.com/msp/tlscacerts/tlsca.chat-network.com-cert.pem
 
 # verify the result of the end-to-end test
 verifyResult () {
@@ -91,10 +92,12 @@ joinChannelWithRetry () {
 installChaincode () {
 	PEER=$1
 	ORG=$2
+	CC=$3
+	CC_SRC_PATH=$4
+	VERSION=${5:-1.0}
 	setGlobals $PEER $ORG
-	VERSION=${3:-1.0}
         set -x
-	peer chaincode install -n mycc -v ${VERSION} -l ${LANGUAGE} -p ${CC_SRC_PATH} >&log.txt
+	peer chaincode install -n $CC -v ${VERSION} -l ${LANGUAGE} -p ${CC_SRC_PATH} >&log.txt
 	res=$?
         set +x
 	cat log.txt
@@ -106,20 +109,23 @@ installChaincode () {
 instantiateChaincode () {
 	PEER=$1
 	ORG=$2
+	CC=$3
+	CTOR=$4
+	POLICY=$5
+	VERSION=${6:-1.0}
 	setGlobals $PEER $ORG
-	VERSION=${3:-1.0}
 
 	# while 'peer chaincode' command can get the orderer endpoint from the peer (if join was successful),
 	# lets supply it directly as we know it using the "-o" option
 	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
                 set -x
-		peer chaincode instantiate -o orderer.chat-network.com:7050 -C $CHANNEL_NAME -n mycc -l ${LANGUAGE} -v ${VERSION} -c '{"Args":["init","a","100","b","200"]}' -P "AND ('OfficialMSP.peer')" >&log.txt
+		peer chaincode instantiate -o orderer.chat-network.com:7050 -C $CHANNEL_NAME -n $CC -l ${LANGUAGE} -v ${VERSION} -c "$CTOR" -P "$POLICY" >&log.txt
 		res=$?
                 set +x
 	else
                 set -x
-		peer chaincode instantiate -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc \
-			-l ${LANGUAGE} -v 1.0 -c '{"Args":["init","a","100","b","200"]}' -P "AND ('OfficialMSP.peer')" >&log.txt
+		peer chaincode instantiate -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n $CC \
+			-l ${LANGUAGE} -v "$VERSION" -c "$CTOR" -P "$POLICY" >&log.txt
 		res=$?
                 set +x
 	fi
@@ -132,11 +138,15 @@ instantiateChaincode () {
 upgradeChaincode () {
     PEER=$1
     ORG=$2
-	POLICY=$3
+	CC=$3
+	VERSION=$4
+	CC_SRC_PATH=$5
+	POLICY=$6
     setGlobals $PEER $ORG
     set -x
 	
-    peer chaincode upgrade -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n mycc -v 2.0 -c '{"Args":["init","a","90","b","210"]}' -P "$POLICY"
+    peer chaincode upgrade -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME \
+		-n $CC -v "$VERSION" -c '{"Args":["init","a","90","b","210"]}' -P "$POLICY"
     res=$?
 	set +x
     cat log.txt
@@ -325,4 +335,19 @@ function getInstantiaedCcVer () {
 	ccVersion=$4
 
 	ccVersion=$( setGlobals 0 $orgName > /dev/null 2>&1 && peer chaincode list --instantiated -C $channelName | grep $cc | cut -d "," -f2 | cut -d ":" -f2) 
+}
+
+function updateChannel () {
+	PEER=$1
+	ORG=$2
+	CHANNEL_NAME=$3
+	orgUpdateEnvelope=$4
+
+	setGlobals 0 official
+	set -x
+	peer channel update -f $orgUpdateEnvelope -c ${CHANNEL_NAME} -o orderer.chat-network.com:7050 --tls --cafile ${ORDERER_CA}
+	res=$?
+	set +x
+
+	verifyResult $res "peer${PEER}.${ORG} uses $orgUpdateEnvelope to update channel failed"
 }
