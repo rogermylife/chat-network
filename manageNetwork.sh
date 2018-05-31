@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PATH=${PWD}/../bin:$PATH
+export PATH=${PWD}/bin:$PATH
 export FABRIC_CFG_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/configs
 IMAGETAG=latest
 export IMAGE_TAG=$IMAGETAG
@@ -215,12 +215,6 @@ else
   exit 1
 fi
 
-# while getopts "m:c:" opt; do
-#   case "$opt" in
-#     c)  CHANNEL_NAME=$OPTARG
-#     ;;
-#   esac
-# done
 
 #Create the network using docker compose
 if [ "${MODE}" == "up" ]; then
