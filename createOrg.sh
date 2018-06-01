@@ -138,6 +138,30 @@ function generateOrgInformation() {
     echo
 }
 
+function replaceCAPrivateKey () {
+    orgName=$1
+    composeFile=$2
+    # sed on MacOSX does not support -i flag with a null extension. We will use
+    # 't' for our back-up's extension and depete it at the end of the function
+    ARCH=`uname -s | grep Darwin`
+    if [ "$ARCH" == "Darwin" ]; then
+        OPTS="-it"
+    else
+        OPTS="-i"
+    fi
+
+    # The next steps will replace the template's contents with the
+    # actual values of the private key file names for the CA.
+    CURRENT_DIR=$PWD
+    cd crypto-config/newOrgs/$orgName/peerOrganizations/$orgName.chat-network.com/ca/
+    PRIV_KEY=$(ls *_sk)
+    cd "$CURRENT_DIR"
+    sed $OPTS "s/__CA_PRIVATE_KEY__/${PRIV_KEY}/g" $composeFile
+    # If MacOSX, remove the temporary backup of the docker-compose file
+    if [ "$ARCH" == "Darwin" ]; then
+        rm docker-compose-e2e.yamlt
+    fi
+}
 
 # Use the CLI container to create the configuration transaction needed to add
 # newOrg to the network
@@ -229,6 +253,8 @@ generateCerts $cryptoFile $cryptoCFGFolder
 # $2    : the info json file name
 echo "generating new org's information..." 
 generateOrgInformation ${orgID}MSP $orgInfoJSON
+
+replaceCAPrivateKey $orgName $composeFile
 
 # create a tx which make new org add to network's official channel
 # In this step, we use $orgInfoJSON file generated previously

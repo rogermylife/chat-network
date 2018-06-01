@@ -19,6 +19,7 @@ echo "FABRIC_CFG_PATH=${FABRIC_CFG_PATH}"
 function generateFoundation (){
   checkPrereqs
   generateCerts
+  replaceCAPrivateKey
   generateOfficialChannelArtifacts
 }
 
@@ -47,6 +48,32 @@ function generateCerts (){
     exit 1
   fi
   echo
+}
+
+function replaceCAPrivateKey () {
+  # sed on MacOSX does not support -i flag with a null extension. We will use
+  # 't' for our back-up's extension and depete it at the end of the function
+  ARCH=`uname -s | grep Darwin`
+  if [ "$ARCH" == "Darwin" ]; then
+    OPTS="-it"
+  else
+    OPTS="-i"
+  fi
+
+  # Copy the template to the file that will be modified to add the private key
+  cp configs/docker-compose-cli-template.yaml $COMPOSE_FILE
+
+  # The next steps will replace the template's contents with the
+  # actual values of the private key file names for the CA.
+  CURRENT_DIR=$PWD
+  cd crypto-config/peerOrganizations/official.chat-network.com/ca/
+  PRIV_KEY=$(ls *_sk)
+  cd "$CURRENT_DIR"
+  sed $OPTS "s/__CA_PRIVATE_KEY__/${PRIV_KEY}/g" $COMPOSE_FILE
+  # If MacOSX, remove the temporary backup of the docker-compose file
+  if [ "$ARCH" == "Darwin" ]; then
+    rm docker-compose-e2e.yamlt
+  fi
 }
 
 function generateOfficialChannelArtifacts() {
@@ -131,7 +158,7 @@ function checkPrereqs() {
      fi
   done
 
-  requiredFiles=($FABRIC_CFG_PATH/crypto-config.yaml $FABRIC_CFG_PATH/configtx.yaml $FABRIC_CFG_PATH/docker-compose-cli.yaml)
+  requiredFiles=($FABRIC_CFG_PATH/crypto-config.yaml $FABRIC_CFG_PATH/configtx.yaml $FABRIC_CFG_PATH/docker-compose-cli-template.yaml)
   for file in ${requiredFiles[@]}; do
       if [ ! -e $file ]
       then
