@@ -40,14 +40,13 @@ services:
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
       - FABRIC_CA_SERVER_CA_NAME=ca-__ORGNAME__
-      - FABRIC_CA_SERVER_TLS_ENABLED=true
-      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.__ORGNAME__.chat-network.com-cert.pem
-      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/__CA_PRIVATE_KEY__
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca.__ORGNAME__.chat-network.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/__CA_PRIVATE_KEY__
     # ports:
     #   - "7054:7054"
-    command: sh -c 'fabric-ca-server start --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.__ORGNAME__.chat-network.com-cert.pem --ca.keyfile /etc/hyperledger/fabric-ca-server-config/__CA_PRIVATE_KEY__ -b admin:adminpw -d'
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     volumes:
-      - ../../crypto-config/newOrgs/__ORGNAME__/peerOrganizations/__ORGNAME__.chat-network.com/ca/:/etc/hyperledger/fabric-ca-server-config
+      - ../../crypto-config/newOrgs/__ORGNAME__/peerOrganizations/__ORGNAME__.chat-network.com/ca/:/etc/hyperledger/fabric-ca-server
     container_name: ca.__ORGNAME__.chat-network.com
     networks:
       - chat-network
