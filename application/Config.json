@@ -1,12 +1,12 @@
 {
     "caUrl" : "http://localhost:7054",
-    "orgName" : "org1",
-    "orgMSP" : "Org1MSP",
+    "orgName" : "official",
+    "orgMSP" : "OfficialMSP",
 	"adminAccount" : "admin",
     "adminPassword" : "adminpw",
-	"peerName" : "peer0.org1.example.com",
+	"peerName" : "peer0.official.chat-network.com",
 	"peerUrl" : "grpc://localhost:7051",
 	"eventhubUrl" : "grpc://localhost:7053",
-	"ordererName" : "orderer.example.com",
+	"ordererName" : "orderer.chat-network.com",
 	"ordererUrl" : "grpc://localhost:7050"
 }
