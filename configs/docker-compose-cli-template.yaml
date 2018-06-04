@@ -43,7 +43,7 @@ services:
       - CORE_PEER_ID=cli
       - CORE_PEER_ADDRESS=peer0.official.chat-network.com:7051
       - CORE_PEER_LOCALMSPID=OfficialMSP
-      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_ENABLED=${TLS_ENABLED}
       - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/official.chat-network.com/peers/peer0.official.chat-network.com/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/official.chat-network.com/peers/peer0.official.chat-network.com/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/official.chat-network.com/peers/peer0.official.chat-network.com/tls/ca.crt

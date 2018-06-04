@@ -143,13 +143,19 @@ upgradeChaincode () {
 	CC_SRC_PATH=$5
 	POLICY=$6
     setGlobals $PEER $ORG
-    set -x
-	
-    peer chaincode upgrade -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME \
-		-n $CC -v "$VERSION" -c '{"Args":["init","a","90","b","210"]}' -P "$POLICY"
-    res=$?
-	set +x
-    cat log.txt
+	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
+                set -x
+		peer chaincode upgrade -o orderer.chat-network.com:7050 $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME \
+			-n $CC -v "$VERSION" -c '{"Args":["init","a","90","b","210"]}' -P "$POLICY"
+		res=$?
+                set +x
+	else
+                set -x
+		peer chaincode upgrade -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME \
+			-n $CC -v "$VERSION" -c '{"Args":["init","a","90","b","210"]}' -P "$POLICY"
+		res=$?
+                set +x
+	fi
     verifyResult $res "Chaincode upgrade on ${ORG} ${PEER} has Failed"
     echo "===================== Chaincode is upgraded on ${ORG} peer${PEER} ===================== "
     echo
@@ -259,7 +265,7 @@ chaincodeInvoke () {
 	fi
 	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
                 set -x
-		peer chaincode invoke -o orderer.chat-network.com:7050 -C $CHANNEL_NAME -n mycc -c "$cons" >&log.txt
+		peer chaincode invoke -o orderer.chat-network.com:7050 -C $CHANNEL_NAME -n mycc -c "$ctor" >&log.txt
 		res=$?
                 set +x
 	else
@@ -344,10 +350,17 @@ function updateChannel () {
 	orgUpdateEnvelope=$4
 
 	setGlobals 0 official
-	set -x
-	peer channel update -f $orgUpdateEnvelope -c ${CHANNEL_NAME} -o orderer.chat-network.com:7050 --tls --cafile ${ORDERER_CA}
-	res=$?
-	set +x
+	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
+		set -x
+        peer channel update -f $orgUpdateEnvelope -c ${CHANNEL_NAME} -o orderer.chat-network.com:7050
+        res=$?
+		set +x
+  	else
+		set -x
+        peer channel update -f $orgUpdateEnvelope -c ${CHANNEL_NAME} -o orderer.chat-network.com:7050 --tls --cafile ${ORDERER_CA}
+        res=$?
+		set +x
+  	fi
 
 	verifyResult $res "peer${PEER}.${ORG} uses $orgUpdateEnvelope to update channel failed"
 }

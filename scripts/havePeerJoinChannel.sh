@@ -41,10 +41,15 @@ fi
 . scripts/utils.sh
 
 echo "Fetching channel genesis config block from orderer..."
-set -x
-peer channel fetch 0 $CHANNEL_NAME.block -o orderer.chat-network.com:7050 -c $CHANNEL_NAME --tls --cafile $ORDERER_CA >&log.txt
-res=$?
-set +x
+if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
+	set -x
+	peer channel fetch 0 $CHANNEL_NAME.block -o orderer.chat-network.com:7050 -c $CHANNEL_NAME --cafile $ORDERER_CA >&log.txt
+	set +x
+else
+	set -x
+	peer channel fetch 0 $CHANNEL_NAME.block -o orderer.chat-network.com:7050 -c $CHANNEL_NAME --tls --cafile $ORDERER_CA >&log.txt
+	set +x
+fi
 cat log.txt
 verifyResult $res "Fetching config block from orderer has Failed"
 
