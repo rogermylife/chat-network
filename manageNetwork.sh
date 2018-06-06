@@ -102,7 +102,7 @@ function generateOfficialChannelArtifacts() {
   echo "#################################################################"
   set -x
   # configtxgen -profile OfficialChannel -outputCreateChannelTx ../channel-artifacts/channel.tx -channelID officialchannel
-  export CHANNEL_NAME=officialchannel  && ../bin/configtxgen -profile OfficialChannel -outputCreateChannelTx channel-artifacts/channel.tx -channelID $CHANNEL_NAME
+  export CHANNEL_NAME=officialchannel  && configtxgen -profile OfficialChannel -outputCreateChannelTx channel-artifacts/channel.tx -channelID $CHANNEL_NAME
   res=$?
   set +x
   if [ $res -ne 0 ]; then
@@ -147,13 +147,13 @@ function checkPrereqs() {
   for UNSUPPORTED_VERSION in $BLACKLISTED_VERSIONS ; do
      echo "$LOCAL_VERSION" | grep -q $UNSUPPORTED_VERSION
      if [ $? -eq 0 ] ; then
-       echo "ERROR! Local Fabric binary version of $LOCAL_VERSION does not match this newer version of BYFN and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
+       echo "ERROR! Local Fabric binary version of $LOCAL_VERSION does not match this newer version of chat-network and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
        exit 1
      fi
 
      echo "$DOCKER_IMAGE_VERSION" | grep -q $UNSUPPORTED_VERSION
      if [ $? -eq 0 ] ; then
-       echo "ERROR! Fabric Docker image version of $DOCKER_IMAGE_VERSION does not match this newer version of BYFN and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
+       echo "ERROR! Fabric Docker image version of $DOCKER_IMAGE_VERSION does not match this newer version of chat-network and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
        exit 1
      fi
   done
