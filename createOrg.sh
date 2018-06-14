@@ -114,7 +114,7 @@ function generateCerts (){
     echo
 }
 
-# Generate channel configuration transaction
+# Generate org configuration transaction
 function generateOrgInformation() {
     which configtxgen
     if [ "$?" -ne 0 ]; then
