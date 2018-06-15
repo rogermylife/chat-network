@@ -41,7 +41,7 @@ func (c *Chaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 
 	return shim.Error("Invalid Smart Contract function name.")
 }
-
+// todo double init need to be reject
 func (c *Chaincode) init (stub shim.ChaincodeStubInterface, args []string) peer.Response{
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 1 Channel name")

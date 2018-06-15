@@ -33,8 +33,6 @@ func (c *Chaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 		return c.queryUser(stub, args)
 	} else if function == "inviteUser" {
 	 	return c.inviteUser(stub, args)
-	} else if function == "joinChannel" {
-	 	return c.joinChannel(stub, args)
 	}
 
 	return shim.Error("Invalid Smart Contract function name.")
@@ -65,25 +63,25 @@ func (c *Chaincode) inviteUser(stub shim.ChaincodeStubInterface, args []string) 
 }
 
 // todo: check cert
-func (c *Chaincode) joinChannel(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	if len(args) != 2 {
-		return shim.Error("Incorrect number of arguments. Expecting 2, User name and Channel name")
-	}
-	userAsBytes, _ := stub.GetState(args[0])
-	user := &UserStatus{}
+// func (c *Chaincode) joinChannel(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+// 	if len(args) != 2 {
+// 		return shim.Error("Incorrect number of arguments. Expecting 2, User name and Channel name")
+// 	}
+// 	userAsBytes, _ := stub.GetState(args[0])
+// 	user := &UserStatus{}
 
-	json.Unmarshal(userAsBytes, &user)
-	if  !contains(user.InvitedChannels, args[1]){
-		return shim.Error("no invited channel name found")
-	}
+// 	json.Unmarshal(userAsBytes, &user)
+// 	if  !contains(user.InvitedChannels, args[1]){
+// 		return shim.Error("no invited channel name found")
+// 	}
 
-	user.InvitedChannels = remove(user.InvitedChannels, args[1])
-	user.JoinedChannels = append(user.JoinedChannels, args[1])
+// 	user.InvitedChannels = remove(user.InvitedChannels, args[1])
+// 	user.JoinedChannels = append(user.JoinedChannels, args[1])
 
-	userAsBytes, _ = json.Marshal(user)
-	stub.PutState(args[0], userAsBytes)
-	return shim.Success( nil )
-}
+// 	userAsBytes, _ = json.Marshal(user)
+// 	stub.PutState(args[0], userAsBytes)
+// 	return shim.Success( nil )
+// }
 
 // todo: check sender is the user himself/herself
 func (c *Chaincode) queryUser(stub shim.ChaincodeStubInterface, args []string) peer.Response {
