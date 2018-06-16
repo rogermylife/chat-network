@@ -27,6 +27,51 @@ configtx="./configs/newOrg/configtx.yaml"
 
 orgInfoJSON="./channel-artifacts/newOrg/${orgName}Info.json"
 
+# Use the CLI container to create the configuration transaction needed to add
+# newOrg to the network
+function createSubmitAddConfigTx () {
+    orgName=$1
+    channelName=$2
+    echo
+    echo "###############################################################"
+    echo "####### Generate and submit config tx to add new Org ##########"
+    echo "###############################################################"
+    docker exec cli scripts/addNewOrgToNetwork.sh $orgName $channelName 3 golang 10
+    if [ $? -ne 0 ]; then
+        echo "ERROR !!!! Unable to create config tx"
+        exit 1
+    fi
+}
+
+function generateCerts (){
+    which cryptogen
+    if [ "$?" -ne 0 ]; then
+        echo "cryptogen tool not found. exiting"
+        exit 1
+    fi
+    configPath=$1
+    outputFolder=$2
+    echo
+    echo "##########################################################"
+    echo "##### Generate certificates using cryptogen tool #########"
+    echo "##########################################################"
+
+    if [ -d "$cryptoCFGFolder" ]; then
+        echo "Organization $orgName existed"
+        exit 1
+        # rm -Rf crypto-config
+    fi
+    set -x
+    cryptogen generate --config=$configPath --output=$outputFolder
+    res=$?
+    set +x
+    if [ $res -ne 0 ]; then
+        echo "Failed to generate certificates..."
+        exit 1
+    fi
+    echo
+}
+
 function generateConfigs () {
     orgName=$1
     orgID=$2
@@ -63,9 +108,14 @@ function generateConfigs () {
     echo "============== generating $composeFile =============="
     echo
 
+    orgPrefix=
+    getOrgPrefix $orgPrefix
+    # register own port prefix
+    echo "${orgPrefix}:${orgName}" >> portList
     cp $composeFileTpl $composeFile
     sed $OPTS "s/__ORGNAME__/${orgName}/g" $composeFile
     sed $OPTS "s/__ORGID__/${orgID}/g" $composeFile
+    sed $OPTS "s/__ORGPREFIX__/${orgPrefix}/g" $composeFile
     if [ "$ARCH" == "Darwin" ]; then
         rm "${composeFile}t"
     fi
@@ -85,33 +135,26 @@ function generateConfigs () {
 
 }
 
-function generateCerts (){
-    which cryptogen
-    if [ "$?" -ne 0 ]; then
-        echo "cryptogen tool not found. exiting"
-        exit 1
-    fi
-    configPath=$1
-    outputFolder=$2
-    echo
-    echo "##########################################################"
-    echo "##### Generate certificates using cryptogen tool #########"
-    echo "##########################################################"
+function getOrgPrefix () {
+    orgPrefix=$1
 
-    if [ -d "$cryptoCFGFolder" ]; then
-        echo "Organization $orgName existed"
-        exit 1
-        # rm -Rf crypto-config
-    fi
-    set -x
-    cryptogen generate --config=$configPath --output=$outputFolder
-    res=$?
-    set +x
-    if [ $res -ne 0 ]; then
-        echo "Failed to generate certificates..."
-        exit 1
-    fi
+    lastLine=$(tail -n 1 portList)
+    orgPrefix=$(echo $lastLine | awk -F ':' '{print $1}')
+    orgPrefix=$(( $orgPrefix + 1 ))
+}
+
+function havePeerJoinNetwork () {
+    orgID=$1
+    channelName=$2
     echo
+    echo "###############################################################"
+    echo "############### Have new peer join channel   ##################"
+    echo "###############################################################"
+    docker exec cli ./scripts/havePeerJoinChannel.sh $orgName $channelName 3 golang 10
+    if [ $? -ne 0 ]; then
+        echo "ERROR !!!! Unable to have new org $orgName peers join network"
+        exit 1
+    fi
 }
 
 # Generate org configuration transaction
@@ -163,19 +206,13 @@ function replaceCAPrivateKey () {
     fi
 }
 
-# Use the CLI container to create the configuration transaction needed to add
-# newOrg to the network
-function createSubmitAddConfigTx () {
+function testNewOrg (){
     orgName=$1
-    channelName=$2
-    echo
-    echo "###############################################################"
-    echo "####### Generate and submit config tx to add new Org ##########"
-    echo "###############################################################"
-    docker exec cli scripts/addNewOrgToNetwork.sh $orgName $channelName 3 golang 10
+    orgID=$2
+    docker exec cli ./scripts/testNewOrg.sh $orgName officialchannel 3 golang 10
     if [ $? -ne 0 ]; then
-        echo "ERROR !!!! Unable to create config tx"
-        exit 1
+    echo "ERROR !!!! Unable to run test"
+    exit 1
     fi
 }
 
@@ -185,20 +222,6 @@ function startPeer () {
     # start org3 peers
     if [ $? -ne 0 ]; then
         echo "ERROR !!!! Unable to start new org network"
-        exit 1
-    fi
-}
-
-function havePeerJoinNetwork () {
-    orgID=$1
-    channelName=$2
-    echo
-    echo "###############################################################"
-    echo "############### Have new peer join channel   ##################"
-    echo "###############################################################"
-    docker exec cli ./scripts/havePeerJoinChannel.sh $orgName $channelName 3 golang 10
-    if [ $? -ne 0 ]; then
-        echo "ERROR !!!! Unable to have new org $orgName peers join network"
         exit 1
     fi
 }
@@ -214,16 +237,6 @@ function upgradeChaincodeInChannel () {
     docker exec cli ./scripts/upgradeChaincode.sh $orgName $channelName $cc 3 golang 10
     if [ $? -ne 0 ]; then
     echo "ERROR !!!! Unable to add new peers on network"
-    exit 1
-    fi
-}
-
-function testNewOrg (){
-    orgName=$1
-    orgID=$2
-    docker exec cli ./scripts/testNewOrg.sh $orgName officialchannel 3 golang 10
-    if [ $? -ne 0 ]; then
-    echo "ERROR !!!! Unable to run test"
     exit 1
     fi
 }
