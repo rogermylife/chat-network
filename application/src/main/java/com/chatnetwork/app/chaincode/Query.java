@@ -6,25 +6,17 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.chatnetwork.app.client.CAClient;
 import com.chatnetwork.app.config.Config;
 import com.chatnetwork.app.user.AppUser;
 import com.chatnetwork.app.util.Util;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.Channel;
-import org.hyperledger.fabric.sdk.Enrollment;
-import org.hyperledger.fabric.sdk.EventHub;
 import org.hyperledger.fabric.sdk.HFClient;
-import org.hyperledger.fabric.sdk.Orderer;
-import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
-import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
-import org.hyperledger.fabric.sdk.ChaincodeResponse.Status;
 
 
 public class Query {

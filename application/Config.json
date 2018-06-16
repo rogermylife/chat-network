@@ -8,5 +8,6 @@
 	"peerUrl" : "grpc://localhost:7051",
 	"eventhubUrl" : "grpc://localhost:7053",
 	"ordererName" : "orderer.chat-network.com",
-	"ordererUrl" : "grpc://localhost:7050"
+	"ordererUrl" : "grpc://localhost:7050",
+	"defaultChannelName" : "officialchannel"
 }

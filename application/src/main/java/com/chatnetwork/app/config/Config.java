@@ -24,6 +24,7 @@ public class Config {
 	private String eventhubUrl;
 	private String ordererName;
 	private String ordererUrl;
+	private String defaultChannelName;
 	public static void main(String[] args) {
 		Config config = newConfig();
 		Gson gson = new Gson();
@@ -33,10 +34,15 @@ public class Config {
 	
 	static public Config newConfig()
 	{
+		return newConfig("Config.json");
+	}
+	
+	static public Config newConfig(String configFile)
+	{
 		Config config = new Config();
 		Gson gson = new Gson();
 		try {
-		  InputStream stream = new FileInputStream("Config.json");
+		  InputStream stream = new FileInputStream(configFile);
 		  JsonReader reader = new JsonReader(new InputStreamReader(stream, "UTF-8"));
 		  // Read file in stream mode
 		  config = gson.fromJson(reader, Config.class);
@@ -128,6 +134,14 @@ public class Config {
 
 	public void setOrdererUrl(String ordererUrl) {
 		this.ordererUrl = ordererUrl;
+	}
+
+	public String getDefaultChannelName() {
+		return defaultChannelName;
+	}
+
+	public void setDefaultChannelName(String defaultChannelName) {
+		this.defaultChannelName = defaultChannelName;
 	}
 
 }

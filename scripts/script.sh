@@ -24,6 +24,7 @@ MAX_RETRY=5
 ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/chat-network.com/orderers/orderer.chat-network.com/msp/tlscacerts/tlsca.chat-network.com-cert.pem
 
 CC_SRC_PATH="github.com/chaincode/chaincode_example02/go/"
+STATUS_CC_SRC_PATH="github.com/chaincode/status"
 if [ "$LANGUAGE" = "node" ]; then
 	CC_SRC_PATH="/opt/gopath/src/github.com/chaincode/chaincode_example02/node/"
 fi
@@ -89,10 +90,12 @@ updateAnchorPeers 0 official
 ## Install chaincode on peer0.org1 and peer0.org2
 echo "Installing chaincode on peer0.official..."
 installChaincode 0 official mycc $CC_SRC_PATH
+installChaincode 0 official status $STATUS_CC_SRC_PATH
 
 # Instantiate chaincode on peer0.org2
 echo "Instantiating chaincode on peer0.org2..."
 instantiateChaincode 0 official mycc '{"Args":["init","a","100","b","200"]}' "AND ('OfficialMSP.peer')" 1.0
+instantiateChaincode 0 official status '{"Args":[]}' "AND ('OfficialMSP.peer')" 1.0
 
 # Query chaincode on peer0.org1
 echo "Querying chaincode on peer0.org1..."
