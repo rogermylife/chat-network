@@ -12,17 +12,57 @@ BLACKLISTED_VERSIONS="^1\.0\. ^1\.1\.0-preview ^1\.1\.0-alpha"
 
 echo "FABRIC_CFG_PATH=${FABRIC_CFG_PATH}"
 
-# Start the network
-# docker-compose -f docker-compose-cli.yaml up -d
+# Do some basic sanity checking to make sure that the appropriate versions of fabric
+# binaries/images are available.  In the future, additional checking for the presence
+# of go or other items could be added.
+function checkPrereqs() {
+  # Note, we check configtxlator externally because it does not require a config file, and peer in the
+  # docker image because of FAB-8551 that makes configtxlator return 'development version' in docker
+  LOCAL_VERSION=$(configtxlator version | sed -ne 's/ Version: //p')
+  DOCKER_IMAGE_VERSION=$(docker run --rm hyperledger/fabric-tools:$IMAGETAG peer version | sed -ne 's/ Version: //p'|head -1)
 
-# Generates network foundation
-function generateFoundation (){
-  checkPrereqs
-  generateCerts
-  replaceCAPrivateKey
-  generateOfficialChannelArtifacts
+  echo "LOCAL_VERSION=$LOCAL_VERSION"
+  echo "DOCKER_IMAGE_VERSION=$DOCKER_IMAGE_VERSION"
+
+  if [ "$LOCAL_VERSION" != "$DOCKER_IMAGE_VERSION" ] ; then
+     echo "=================== WARNING ==================="
+     echo "  Local fabric binaries and docker images are  "
+     echo "  out of  sync. This may cause problems.       "
+     echo "==============================================="
+  fi
+
+  for UNSUPPORTED_VERSION in $BLACKLISTED_VERSIONS ; do
+     echo "$LOCAL_VERSION" | grep -q $UNSUPPORTED_VERSION
+     if [ $? -eq 0 ] ; then
+       echo "ERROR! Local Fabric binary version of $LOCAL_VERSION does not match this newer version of chat-network and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
+       exit 1
+     fi
+
+     echo "$DOCKER_IMAGE_VERSION" | grep -q $UNSUPPORTED_VERSION
+     if [ $? -eq 0 ] ; then
+       echo "ERROR! Fabric Docker image version of $DOCKER_IMAGE_VERSION does not match this newer version of chat-network and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
+       exit 1
+     fi
+  done
+
+  requiredFiles=($FABRIC_CFG_PATH/crypto-config.yaml $FABRIC_CFG_PATH/configtx.yaml $FABRIC_CFG_PATH/docker-compose-cli-template.yaml)
+  for file in ${requiredFiles[@]}; do
+      if [ ! -e $file ]
+      then
+          echo "file $file is not exsist"
+          exit 1
+      fi
+  done
 }
 
+function clearContainers () {
+  CONTAINER_IDS=$(docker ps -aq)
+  if [ -z "$CONTAINER_IDS" -o "$CONTAINER_IDS" == " " ]; then
+    echo "---- No containers available for deletion ----"
+  else
+    docker rm -f $CONTAINER_IDS
+  fi
+}
 
 # Generates Org certs using cryptogen tool
 function generateCerts (){
@@ -50,30 +90,12 @@ function generateCerts (){
   echo
 }
 
-function replaceCAPrivateKey () {
-  # sed on MacOSX does not support -i flag with a null extension. We will use
-  # 't' for our back-up's extension and depete it at the end of the function
-  ARCH=`uname -s | grep Darwin`
-  if [ "$ARCH" == "Darwin" ]; then
-    OPTS="-it"
-  else
-    OPTS="-i"
-  fi
-
-  # Copy the template to the file that will be modified to add the private key
-  cp configs/docker-compose-cli-template.yaml $COMPOSE_FILE
-
-  # The next steps will replace the template's contents with the
-  # actual values of the private key file names for the CA.
-  CURRENT_DIR=$PWD
-  cd crypto-config/peerOrganizations/official.chat-network.com/ca/
-  PRIV_KEY=$(ls *_sk)
-  cd "$CURRENT_DIR"
-  sed $OPTS "s/__CA_PRIVATE_KEY__/${PRIV_KEY}/g" $COMPOSE_FILE
-  # If MacOSX, remove the temporary backup of the docker-compose file
-  if [ "$ARCH" == "Darwin" ]; then
-    rm docker-compose-e2e.yamlt
-  fi
+# Generates network foundation
+function generateFoundation (){
+  checkPrereqs
+  generateCerts
+  replaceCAPrivateKey
+  generateOfficialChannelArtifacts
 }
 
 function generateOfficialChannelArtifacts() {
@@ -124,70 +146,23 @@ function generateOfficialChannelArtifacts() {
   fi
 }
 
-
-# Do some basic sanity checking to make sure that the appropriate versions of fabric
-# binaries/images are available.  In the future, additional checking for the presence
-# of go or other items could be added.
-function checkPrereqs() {
-  # Note, we check configtxlator externally because it does not require a config file, and peer in the
-  # docker image because of FAB-8551 that makes configtxlator return 'development version' in docker
-  LOCAL_VERSION=$(configtxlator version | sed -ne 's/ Version: //p')
-  DOCKER_IMAGE_VERSION=$(docker run --rm hyperledger/fabric-tools:$IMAGETAG peer version | sed -ne 's/ Version: //p'|head -1)
-
-  echo "LOCAL_VERSION=$LOCAL_VERSION"
-  echo "DOCKER_IMAGE_VERSION=$DOCKER_IMAGE_VERSION"
-
-  if [ "$LOCAL_VERSION" != "$DOCKER_IMAGE_VERSION" ] ; then
-     echo "=================== WARNING ==================="
-     echo "  Local fabric binaries and docker images are  "
-     echo "  out of  sync. This may cause problems.       "
-     echo "==============================================="
-  fi
-
-  for UNSUPPORTED_VERSION in $BLACKLISTED_VERSIONS ; do
-     echo "$LOCAL_VERSION" | grep -q $UNSUPPORTED_VERSION
-     if [ $? -eq 0 ] ; then
-       echo "ERROR! Local Fabric binary version of $LOCAL_VERSION does not match this newer version of chat-network and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
-       exit 1
-     fi
-
-     echo "$DOCKER_IMAGE_VERSION" | grep -q $UNSUPPORTED_VERSION
-     if [ $? -eq 0 ] ; then
-       echo "ERROR! Fabric Docker image version of $DOCKER_IMAGE_VERSION does not match this newer version of chat-network and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
-       exit 1
-     fi
-  done
-
-  requiredFiles=($FABRIC_CFG_PATH/crypto-config.yaml $FABRIC_CFG_PATH/configtx.yaml $FABRIC_CFG_PATH/docker-compose-cli-template.yaml)
-  for file in ${requiredFiles[@]}; do
-      if [ ! -e $file ]
-      then
-          echo "file $file is not exsist"
-          exit 1
-      fi
-  done
-}
-
-# Generate the needed certificates, the genesis block and start the network.
-function networkUp () {
-  checkPrereqs
-  # generate artifacts if they don't exist
-  if [ ! -d "crypto-config" ]; then
-    generateFoundation
-  fi
+function initPortList() {
+  # PortList is a file used to record the port prefix of a organization using
+  # The prefix plus one digit is the port number what a organizationn uses
+  # The last digit of port represents various usage.
+  # Totally, there are 4 port numbers which a org uses.
+  #    1 --> peer's url port
+  #    3 --> eventhub port of org's peer
+  #    4 --> org's CA
+  # For example, the org, official, uses the ports 7051, 7053 and 7054.
+  # And the prefix of official is 705
+  # In addition, the orderer of the whole network uses the port 7050.
+  # The orgs newly created use the prefix start from 801
   
-  IMAGE_TAG=$IMAGETAG docker-compose -f $COMPOSE_FILE up -d 2>&1
-  
-  if [ $? -ne 0 ]; then
-    echo "ERROR !!!! Unable to start network"
-    exit 1
-  fi
-  # now run the end to end script
-  docker exec cli scripts/script.sh 'officialchannel' $CLI_DELAY $LANGUAGE $CLI_TIMEOUT
-  if [ $? -ne 0 ]; then
-    echo "ERROR !!!! Test failed"
-    exit 1
-  fi
+  # The org newest created will fetch the port prefix from the last line of file
+  # and use the port prefix plus one as its own port prefix.
+  echo "705:official" > portList
+  echo "800:" >> portList
 }
 
 function networkDown () {
@@ -206,12 +181,27 @@ function networkDown () {
   # fi
 }
 
-function clearContainers () {
-  CONTAINER_IDS=$(docker ps -aq)
-  if [ -z "$CONTAINER_IDS" -o "$CONTAINER_IDS" == " " ]; then
-    echo "---- No containers available for deletion ----"
-  else
-    docker rm -f $CONTAINER_IDS
+# Generate the needed certificates, the genesis block and start the network.
+function networkUp () {
+  checkPrereqs
+  # generate artifacts if they don't exist
+  if [ ! -d "crypto-config" ]; then
+    generateFoundation
+  fi
+  
+  initPortList
+
+  IMAGE_TAG=$IMAGETAG docker-compose -f $COMPOSE_FILE up -d 2>&1
+  
+  if [ $? -ne 0 ]; then
+    echo "ERROR !!!! Unable to start network"
+    exit 1
+  fi
+  # now run the end to end script
+  docker exec cli scripts/script.sh 'officialchannel' $CLI_DELAY $LANGUAGE $CLI_TIMEOUT
+  if [ $? -ne 0 ]; then
+    echo "ERROR !!!! Test failed"
+    exit 1
   fi
 }
 
@@ -221,6 +211,32 @@ function removeUnwantedImages() {
     echo "---- No images available for deletion ----"
   else
     docker rmi -f $DOCKER_IMAGE_IDS
+  fi
+}
+
+function replaceCAPrivateKey () {
+  # sed on MacOSX does not support -i flag with a null extension. We will use
+  # 't' for our back-up's extension and depete it at the end of the function
+  ARCH=`uname -s | grep Darwin`
+  if [ "$ARCH" == "Darwin" ]; then
+    OPTS="-it"
+  else
+    OPTS="-i"
+  fi
+
+  # Copy the template to the file that will be modified to add the private key
+  cp configs/docker-compose-cli-template.yaml $COMPOSE_FILE
+
+  # The next steps will replace the template's contents with the
+  # actual values of the private key file names for the CA.
+  CURRENT_DIR=$PWD
+  cd crypto-config/peerOrganizations/official.chat-network.com/ca/
+  PRIV_KEY=$(ls *_sk)
+  cd "$CURRENT_DIR"
+  sed $OPTS "s/__CA_PRIVATE_KEY__/${PRIV_KEY}/g" $COMPOSE_FILE
+  # If MacOSX, remove the temporary backup of the docker-compose file
+  if [ "$ARCH" == "Darwin" ]; then
+    rm docker-compose-e2e.yamlt
   fi
 }
 
