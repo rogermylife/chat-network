@@ -1,5 +1,9 @@
 package com.chatnetwork.app.util;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Properties;
 
@@ -15,6 +19,10 @@ import com.chatnetwork.app.config.Config;
 import com.chatnetwork.app.user.AppUser;
 
 public class Util {
+	
+	// In general, portList file is next to manageNetwrok.sh
+	static final public String portList = new String("../portList");
+	
 	static public HFCAClient newCAClient(String url) throws MalformedURLException {
 		CryptoSuite cryptoSuite = CryptoSuite.Factory.getCryptoSuite();
 		Properties p =new Properties();
@@ -44,5 +52,24 @@ public class Util {
 		channel.initialize();
 		
 		return channel;
+	}
+	
+	static public String getPortPrefixString(String orgName) {
+		String prefix = new String();
+		try (BufferedReader br = new BufferedReader(new FileReader(Util.portList))) {
+		    String line;
+		    while ((line = br.readLine()) != null) {
+		       if (line.contains(orgName)) {
+		    	   String[] parts = line.split(":");
+		    	   prefix = parts[0];
+		    	   return prefix;
+		       }
+		    }
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return prefix;
 	}
 }

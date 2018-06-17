@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.chatnetwork.app.util.Util;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
@@ -30,6 +31,24 @@ public class Config {
 		Gson gson = new Gson();
 		String temp = gson.toJson(config);
 		Logger.getLogger(Config.class.getName()).log(Level.INFO, "config's content: "+temp);
+	}
+	
+	public Config() {
+		
+	}
+	public Config(String orgName) {
+		String prefix = Util.getPortPrefixString(orgName);
+		this.caUrl = String.format("http://localhost:%s4",prefix);
+	    this.orgName = orgName;
+	    this.orgMSP = String.format("%sMSP", orgName.substring(0, 1).toUpperCase() + orgName.substring(1));
+		this.adminAccount = "admin";
+	    this.adminPassword = "adminpw";
+		this.peerName = String.format("peer0.%s.chat-network.com", orgName);
+		this.peerUrl = String.format("grpc://localhost:%s1", prefix);
+		this.eventhubUrl = String.format("grpc://localhost:%s3", prefix);
+		this.ordererName = "orderer.chat-network.com";
+		this.ordererUrl = "grpc://localhost:7050";
+		this.defaultChannelName = "officialchannel";
 	}
 	
 	static public Config newConfig()

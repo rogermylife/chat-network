@@ -40,7 +40,11 @@ public class Client {
 	}
 	
 	public Client (String configFile) throws MalformedURLException, EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
-		this.config = Config.newConfig(configFile);
+		this(Config.newConfig(configFile));
+	}
+	
+	public Client (Config config) throws MalformedURLException, EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
+		this.config = config;
 		this.caClient = Util.newCAClient(config.getCAUrl());
 		this.admin = new AppUser(config, caClient.enroll(config.getAdminAccount(), config.getAdminPassword()));
 		this.hfClient = Util.newHFClient(admin);
@@ -50,6 +54,10 @@ public class Client {
 	
 	public boolean createChatRoom() {
 		return true;
+	}
+	
+	public Config getConfig() {
+		return this.config;
 	}
 	
 	public boolean inviteUser() {
@@ -94,7 +102,8 @@ public class Client {
 		return true;
 	}
 	
-	public boolean query(String channelName, String chaincodeName, String functionName, String[] args) {
+	public String query(String channelName, String chaincodeName, String functionName, String[] args) {
+		String result = new String();
 		try {
 			Channel channel = Util.newChannel(channelName, hfClient, config);
 			QueryByChaincodeRequest request = hfClient.newQueryProposalRequest();
@@ -105,22 +114,22 @@ public class Client {
 			Collection<ProposalResponse> res = channel.queryByChaincode(request);
 			for (ProposalResponse pres : res) {
 			    String stringResponse = new String(pres.getChaincodeActionResponsePayload());
-			    Logger.getLogger(Query.class.getName()).log(Level.INFO, stringResponse);
-			    
+			    result = result.concat(stringResponse);
 			}
+		    Logger.getLogger(Query.class.getName()).log(Level.INFO, "query result:\n" + result);
 									
 		} catch (Exception e) {
 			e.printStackTrace();
-			return false;
+			return "";
 		}
-		return true;
+		return result;
 	}
 	
 	public boolean queryChatHistory() {
 		return true;
 	}
 	
-	public boolean qeryUserStatus() {
+	public String qeryUserStatus() {
 		return query(config.getDefaultChannelName(), "status", "queryUser", new String[] {config.getOrgName()});
 	}
 	
