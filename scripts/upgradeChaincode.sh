@@ -29,9 +29,10 @@ COUNTER=1
 MAX_RETRY=5
 ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/chat-network.com/orderers/orderer.chat-network.com/msp/tlscacerts/tlsca.chat-network.com-cert.pem
 
-CC_SRC_PATH="github.com/chaincode/chaincode_example02/go/"
+MYCC_CC_SRC_PATH="github.com/chaincode/chaincode_example02/go/"
+STATUS_CC_SRC_PATH="github.com/chaincode/status"
 if [ "$LANGUAGE" = "node" ]; then
-	CC_SRC_PATH="/opt/gopath/src/github.com/chaincode/chaincode_example02/node/"
+	MYCC_CC_SRC_PATH="/opt/gopath/src/github.com/chaincode/chaincode_example02/node/"
 fi
 
 # import utils
@@ -48,18 +49,25 @@ CHCFGJSON=config.json
 fetchChannelConfig ${CHANNEL_NAME} $CHCFGJSON
 orgNames=
 getOrgNamesFromCHCFGJSON $CHCFGJSON $orgNames
+# It may occur errors, becaouse it can not get the ccVersion exactly.
+# After a peer call "peer channel join", it need some time to really join it.
+# While more peers in the network, it need more time to join.
+# Around of 15 peers, it can not fetch channel info including ccVersion rapidly.
+# After it joins the channel, everything will be OK!
 for orgName in "${orgNames[@]}"; do
-	installChaincode 0 $orgName mycc $CC_SRC_PATH $ccVersion
+	installChaincode 0 $orgName mycc $MYCC_CC_SRC_PATH $ccVersion
+	installChaincode 0 $orgName status $STATUS_CC_SRC_PATH $ccVersion
 done
 
 
 echo "===================== Upgrading instantiated chaincode on peer0.${orgNames[0]}(creater) ===================== "
 fetchChannelConfig ${CHANNEL_NAME} $CHCFGJSON
 policy="OR $(getOrgMSPsFromCHCFGJSON $CHCFGJSON)"
-upgradeChaincode 0 ${orgNames[0]} mycc $ccVersion $CC_SRC_PATH "$policy"
+upgradeChaincode 0 ${orgNames[0]} mycc $ccVersion '{"Args":["init","a","90","b","210"]}' "$policy"
+upgradeChaincode 0 ${orgNames[0]} status $ccVersion '{"Args":[]}' "$policy"
 
 echo
-echo "========= Finished adding $ORG_NAME to your first network! ========= "
+echo "========= Finished adding $ORG_NAME to Chat-Network! ========= "
 echo
 
 exit 0

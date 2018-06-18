@@ -28,7 +28,7 @@ MAX_RETRY=5
 ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/chat-network.com/orderers/orderer.chat-network.com/msp/tlscacerts/tlsca.chat-network.com-cert.pem
 
 echo
-echo "========= Getting newOrg on to your first network ========= "
+echo "========= Getting newOrg on to your Chat-Network ========= "
 echo
 
 

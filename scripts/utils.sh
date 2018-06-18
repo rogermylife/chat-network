@@ -102,7 +102,7 @@ installChaincode () {
         set +x
 	cat log.txt
 	verifyResult $res "Chaincode installation on peer${PEER}.${ORG} has Failed"
-	echo "===================== Chaincode is installed on peer${PEER}.${ORG} ===================== "
+	echo "===================== Chaincode ${CC_SRC_PATH} is installed on peer${PEER}.${ORG} ===================== "
 	echo
 }
 
@@ -140,19 +140,19 @@ upgradeChaincode () {
     ORG=$2
 	CC=$3
 	VERSION=$4
-	CC_SRC_PATH=$5
+	CTOR=$5
 	POLICY=$6
     setGlobals $PEER $ORG
 	if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
                 set -x
 		peer chaincode upgrade -o orderer.chat-network.com:7050 $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME \
-			-n $CC -v "$VERSION" -c '{"Args":["init","a","90","b","210"]}' -P "$POLICY"
+			-n $CC -v "$VERSION" -c "$CTOR" -P "$POLICY"
 		res=$?
                 set +x
 	else
                 set -x
 		peer chaincode upgrade -o orderer.chat-network.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME \
-			-n $CC -v "$VERSION" -c '{"Args":["init","a","90","b","210"]}' -P "$POLICY"
+			-n $CC -v "$VERSION" -c "$CTOR" -P "$POLICY"
 		res=$?
                 set +x
 	fi
@@ -332,6 +332,10 @@ function signConfigtxInChannel () {
 }
 
 # get current instantiated chaincode version
+# Because after a peer join a channel, it need some time 
+# to join channel exactly. A round of 15 peers,
+# need more time so that it can not get the 
+# chaincode version immediately. So it will fail.
 # $4 ccVersion	: return value
 function getInstantiaedCcVer () {
 	
@@ -339,8 +343,8 @@ function getInstantiaedCcVer () {
 	channelName=$2
 	orgName=$3
 	ccVersion=$4
-
 	ccVersion=$( setGlobals 0 $orgName > /dev/null 2>&1 && peer chaincode list --instantiated -C $channelName | grep $cc | cut -d "," -f2 | cut -d ":" -f2) 
+	echo "current ver of $cc is $ccVersion"
 }
 
 function updateChannel () {

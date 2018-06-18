@@ -71,15 +71,20 @@ public class Client {
 			tpr.setChaincodeID(ChaincodeID.newBuilder().setName("status").build());
 			tpr.setFcn(functionName);
 			tpr.setArgs(args);
-			tpr.setProposalWaitTime(1000);
+			tpr.setProposalWaitTime(20000);
 			Collection<ProposalResponse> response;
 			response = channel.sendTransactionProposal(tpr, channel.getPeers());
 			for (ProposalResponse pres : response) {
-				String stringResponse = new String(pres.getChaincodeActionResponsePayload());
-				Logger.getLogger(Invoke.class.getName()).log(Level.INFO,
-						"Transaction proposal on channel " + channelName + " " + pres.getMessage() + " "
-								+ pres.getStatus() + " with transaction id:" + pres.getTransactionID());
-				Logger.getLogger(Invoke.class.getName()).log(Level.INFO,stringResponse);
+				if (pres.getStatus() == ProposalResponse.Status.SUCCESS) {
+					String stringResponse = new String(pres.getChaincodeActionResponsePayload());
+					Logger.getLogger(Client.class.getName()).log(Level.INFO,
+							"Transaction proposal on channel " + channelName + " " + pres.getMessage() + " "
+									+ pres.getStatus() + " with transaction id:" + pres.getTransactionID());
+					Logger.getLogger(Client.class.getName()).log(Level.INFO,stringResponse);
+				}
+				else
+					Logger.getLogger(Client.class.getName()).log(Level.INFO,"response failed "+pres.getMessage() + " " 
+										+ pres.getStatus() + " with transaction id:" + pres.getTransactionID());
 			}
 			CompletableFuture<TransactionEvent> cf = channel.sendTransaction(response);
 			Logger.getLogger(Invoke.class.getName()).log(Level.INFO,cf.toString());

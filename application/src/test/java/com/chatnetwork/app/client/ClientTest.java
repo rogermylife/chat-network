@@ -26,11 +26,11 @@ public class ClientTest {
 
 	@Test
 	public void testRegisterUser() throws MalformedURLException, EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
-		Client client = new Client();
+		Client client = new Client(new Config("org4"));
 		boolean result;
 		String response;
-		result = client.registerUser();
-		assertTrue("register user failed", result);
+//		result = client.registerUser();
+//		assertTrue("register user failed", result);
 		response = client.qeryUserStatus();
 		result = response.contains(client.getConfig().getOrgName());
 		assertTrue("query userStatus failed", result);
