@@ -71,7 +71,7 @@ public class Client {
 			tpr.setChaincodeID(ChaincodeID.newBuilder().setName("status").build());
 			tpr.setFcn(functionName);
 			tpr.setArgs(args);
-			tpr.setProposalWaitTime(20000);
+			tpr.setProposalWaitTime(30000);
 			Collection<ProposalResponse> response;
 			response = channel.sendTransactionProposal(tpr, channel.getPeers());
 			for (ProposalResponse pres : response) {
