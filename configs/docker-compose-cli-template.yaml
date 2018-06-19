@@ -30,6 +30,22 @@ services:
     networks:
       - chat-network
 
+  ca.official.chat-network.com:
+    image: hyperledger/fabric-ca:$IMAGE_TAG
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-official
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca.official.chat-network.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/__CA_PRIVATE_KEY__
+    ports:
+      - "7054:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ../crypto-config/peerOrganizations/official.chat-network.com/ca/:/etc/hyperledger/fabric-ca-server
+    container_name: ca.official.chat-network.com
+    networks:
+      - chat-network
+
   cli:
     container_name: cli
     image: rogermylife/fabric-tools:$IMAGE_TAG
@@ -38,8 +54,8 @@ services:
     environment:
       - GOPATH=/opt/gopath
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_LOGGING_LEVEL=DEBUG
-      # - CORE_LOGGING_LEVEL=INFO
+      # - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_LOGGING_LEVEL=INFO
       - CORE_PEER_ID=cli
       - CORE_PEER_ADDRESS=peer0.official.chat-network.com:7051
       - CORE_PEER_LOCALMSPID=OfficialMSP
@@ -61,20 +77,3 @@ services:
       - peer0.official.chat-network.com
     networks:
       - chat-network
-
-  ca.official.chat-network.com:
-    image: hyperledger/fabric-ca:$IMAGE_TAG
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-official
-      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca.official.chat-network.com-cert.pem
-      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/__CA_PRIVATE_KEY__
-    ports:
-      - "7054:7054"
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    volumes:
-      - ../crypto-config/peerOrganizations/official.chat-network.com/ca/:/etc/hyperledger/fabric-ca-server
-    container_name: ca.official.chat-network.com
-    networks:
-      - chat-network
-

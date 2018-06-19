@@ -10,6 +10,23 @@ CLI_TIMEOUT=10
 CLI_DELAY=3
 BLACKLISTED_VERSIONS="^1\.0\. ^1\.1\.0-preview ^1\.1\.0-alpha"
 
+cryptoFileTpl="$FABRIC_CFG_PATH/crypto-config-template.yaml"
+cryptoFile="$FABRIC_CFG_PATH/crypto-config.yaml"
+configTxFileTpl="$FABRIC_CFG_PATH/configtx-template.yaml"
+configTxFile="$FABRIC_CFG_PATH/configtx.yaml"
+composeFileTpl="$FABRIC_CFG_PATH/docker-compose-cli-template.yaml"
+composeFile="$FABRIC_CFG_PATH/docker-compose-cli.yaml"
+
+cryptoFilePeerTpl=$'
+  - Name: __ORGNAME__
+    Domain: __ORGNAME__.chat-network.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+'
+
 echo "FABRIC_CFG_PATH=${FABRIC_CFG_PATH}"
 
 # Do some basic sanity checking to make sure that the appropriate versions of fabric
@@ -45,7 +62,7 @@ function checkPrereqs() {
      fi
   done
 
-  requiredFiles=($FABRIC_CFG_PATH/crypto-config.yaml $FABRIC_CFG_PATH/configtx.yaml $FABRIC_CFG_PATH/docker-compose-cli-template.yaml)
+  requiredFiles=($cryptoFile $configTxFile $composeFile)
   for file in ${requiredFiles[@]}; do
       if [ ! -e $file ]
       then
@@ -88,6 +105,22 @@ function generateCerts (){
     exit 1
   fi
   echo
+}
+
+function generateConfigs (){
+  : ${ORGS_NUM:="0"}
+  echo "ORGS_NUM is $ORGS_NUM"
+
+  echo 
+  echo "generating crypto-config file $cryptoFile"
+  echo
+  cp $cryptoFileTpl $cryptoFile
+  for (( i=1; i<=$ORGS_NUM; i++ ))
+  do
+    orgName="org"$i
+    cryptoFilePeer=$(echo "$cryptoFilePeerTpl" | sed --expression="s/__ORGNAME__/${orgName}/g")
+    echo "$cryptoFilePeer" >> $cryptoFile
+  done
 }
 
 # Generates network foundation
@@ -183,6 +216,9 @@ function networkDown () {
 
 # Generate the needed certificates, the genesis block and start the network.
 function networkUp () {
+  generateConfigs
+  echo "sorry bro, we are testing "
+  exit 2
   checkPrereqs
   # generate artifacts if they don't exist
   if [ ! -d "crypto-config" ]; then
@@ -258,6 +294,12 @@ else
   exit 1
 fi
 
+while getopts "n:" opt; do
+  case "$opt" in
+    n)  ORGS_NUM=$OPTARG
+    ;;
+  esac
+done
 
 #Create the network using docker compose
 if [ "${MODE}" == "up" ]; then

@@ -1,0 +1,37 @@
+
+  peer0.__ORGNAME__.chat-network.com:
+    container_name: peer0.__ORGNAME__.chat-network.com
+    extends:
+      file: ../base/peer-base.yaml
+      service: peer-base
+    environment:
+      - CORE_PEER_ID=peer0.__ORGNAME__.chat-network.com
+      - CORE_PEER_ADDRESS=peer0.__ORGNAME__.chat-network.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.__ORGNAME__.chat-network.com:7051
+      - CORE_PEER_LOCALMSPID=__ORGID__MSP
+    volumes:
+        - /var/run/:/host/var/run/
+        - ../crypto-config/newOrgs/__ORGNAME__/peerOrganizations/__ORGNAME__.chat-network.com/peers/peer0.__ORGNAME__.chat-network.com/msp:/etc/hyperledger/fabric/msp
+        - ../crypto-config/newOrgs/__ORGNAME__/peerOrganizations/__ORGNAME__.chat-network.com/peers/peer0.__ORGNAME__.chat-network.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.__ORGNAME__.chat-network.com:/var/hyperledger/production
+    ports:
+      - __ORGPREFIX__1:7051
+      - __ORGPREFIX__3:7053
+    networks:
+      - chat-network
+  
+  ca.__ORGNAME__.chat-network.com:
+    image: hyperledger/fabric-ca:$IMAGE_TAG
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-__ORGNAME__
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca.__ORGNAME__.chat-network.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/__CA_PRIVATE_KEY__
+    ports:
+      - "__ORGPREFIX__4:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ../crypto-config/newOrgs/__ORGNAME__/peerOrganizations/__ORGNAME__.chat-network.com/ca/:/etc/hyperledger/fabric-ca-server
+    container_name: ca.__ORGNAME__.chat-network.com
+    networks:
+      - chat-network
