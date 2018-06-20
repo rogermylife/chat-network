@@ -1,0 +1,30 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# modified by rogermylife
+
+---
+################################################################################
+#
+#   Section: Organizations
+#
+#   - This section defines the different organizational identities which will
+#   be referenced later in the configuration.
+#
+################################################################################
+Organizations:
+    - &__ORGID__
+        Name: __ORGID__MSP
+
+        # ID to load the MSP definition as
+        ID: __ORGID__MSP
+
+        MSPDir: ../../crypto-config/newOrgs/__ORGNAME__/peerOrganizations/__ORGNAME__.chat-network.com/msp
+
+        AnchorPeers:
+            # AnchorPeers defines the location of peers which can be used
+            # for cross org gossip communication.  Note, this value is only
+            # encoded in the genesis block in the Application section context
+            - Host: peer0.__ORGNAME__.chat-network.com
+              Port: 7051

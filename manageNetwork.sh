@@ -17,6 +17,14 @@ configTxFile="$FABRIC_CFG_PATH/configtx.yaml"
 composeFileTpl="$FABRIC_CFG_PATH/docker-compose-cli-template.yaml"
 composeFile="$FABRIC_CFG_PATH/docker-compose-cli.yaml"
 
+################################################################################
+#
+#   Section: Organizations
+#
+#   - This section defines the different organizational identities which will
+#   be referenced later in the configuration.
+#
+################################################################################
 cryptoFilePeerTpl=$'
   - Name: __ORGNAME__
     Domain: __ORGNAME__.chat-network.com
@@ -25,6 +33,33 @@ cryptoFilePeerTpl=$'
       Count: 1
     Users:
       Count: 1
+'
+
+################################################################################
+#
+#   Section: Organizations
+#
+#   - This section defines the different organizational identities which will
+#   be referenced later in the configuration.
+#
+################################################################################
+ordererConsortimusOrgTpl=$'
+                    - *__ORGID__Org
+'
+
+
+officialChannelOrgTpl=$'
+                - *__ORGID__Org
+'
+
+orgTpl=$'
+    - \&__ORGID__Org
+        Name: __ORGID__MSP
+        ID: __ORGID__MSP
+        MSPDir: ../crypto-config/peerOrganizations/__ORGNAME__.chat-network.com/msp
+        AnchorPeers:
+            - Host: peer0.__ORGNAME__.chat-network.com
+              Port: 7051
 '
 
 echo "FABRIC_CFG_PATH=${FABRIC_CFG_PATH}"
@@ -114,6 +149,7 @@ function generateConfigs (){
   echo 
   echo "generating crypto-config file $cryptoFile"
   echo
+
   cp $cryptoFileTpl $cryptoFile
   for (( i=1; i<=$ORGS_NUM; i++ ))
   do
@@ -121,6 +157,42 @@ function generateConfigs (){
     cryptoFilePeer=$(echo "$cryptoFilePeerTpl" | sed --expression="s/__ORGNAME__/${orgName}/g")
     echo "$cryptoFilePeer" >> $cryptoFile
   done
+
+  echo 
+  echo "generating configTx file $configTxFile"
+  echo
+
+  cp $configTxFileTpl $configTxFile
+  ordererConsortimusOrgs=""
+  officialChannelOrgs=""
+  orgs=""
+
+  for (( i=1; i<=$ORGS_NUM; i++ ))
+  do
+    orgName="org"$i
+    orgID="$(tr '[:lower:]' '[:upper:]' <<< ${orgName:0:1})${orgName:1}"
+
+    # generate ordererConsortimusOrgs
+    temp=$(echo "$ordererConsortimusOrgTpl" | sed --expression="s/__ORGID__/${orgID}/g")
+    ordererConsortimusOrgs=$ordererConsortimusOrgs$temp
+
+    # generate officialChannelOrgs
+    temp=$(echo "$officialChannelOrgTpl" | sed --expression="s/__ORGID__/${orgID}/g")
+    officialChannelOrgs=$officialChannelOrgs$temp
+
+    temp=$(echo "$orgTpl" | sed --expression="s/__ORGID__/${orgID}/g")
+    echo $temp
+    temp=$(echo "$temp" | sed --expression="s/__ORGNAME__/${orgName}/g")
+    orgs=$orgs$temp
+  done
+  # sed -i "s/__ORDERER_CONSORTIMUS_ORGS__/${ordererConsortimusOrgs}/g" $configTxFile
+  echo "$(awk -v r="$ordererConsortimusOrgs" '{gsub(/__ORDERER_CONSORTIMUS_ORGS__/,r)}1' $configTxFile )" > $configTxFile
+  echo "$(awk -v r="$officialChannelOrgs" '{gsub(/__OFFICIAL_CHANNEL_ORGS__/,r)}1' $configTxFile )" > $configTxFile
+  echo "$orgs"
+  echo "$(awk -v r="$orgs" '{gsub(/__ORGS__/,r)}1' $configTxFile )" > $configTxFile
+
+  # officialChannelOrgTpl
+  # orgTpl
 }
 
 # Generates network foundation

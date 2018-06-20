@@ -22,8 +22,8 @@ cryptoFileTpl="./configs/crypto-config-newOrg-template.yaml"
 composeFile="./configs/newOrg/docker-compose-${orgName}.yaml"
 composeFileTpl="./configs/docker-compose-newOrg-template.yaml"
 
-configtxTpl="./configs/configtx-template.yaml"
 configtx="./configs/newOrg/configtx.yaml"
+configtxTpl="./configs/configtx-newOrg-template.yaml"
 
 orgInfoJSON="./channel-artifacts/newOrg/${orgName}Info.json"
 

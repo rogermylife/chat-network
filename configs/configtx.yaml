@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+# modified by rogermylifeQ@gmail.com
 
 ---
 ################################################################################
@@ -27,12 +28,20 @@ Profiles:
             SampleConsortium:
                 Organizations:
                     - *OfficialOrg
+
+                    - *Org1Org
+                    - *Org2Org
+                    - *Org3Org
     OfficialChannel:
         Consortium: SampleConsortium
         Application:
             <<: *ApplicationDefaults
             Organizations:
                 - *OfficialOrg
+
+                - *Org1Org
+                - *Org2Org
+                - *Org3Org
             Capabilities:
                 <<: *ApplicationCapabilities
 
@@ -74,6 +83,28 @@ Organizations:
             # for cross org gossip communication.  Note, this value is only
             # encoded in the genesis block in the Application section context
             - Host: peer0.official.chat-network.com
+              Port: 7051
+
+    - &Org1Org
+        Name: Org1MSP
+        ID: Org1MSP
+        MSPDir: ../crypto-config/peerOrganizations/org1.chat-network.com/msp
+        AnchorPeers:
+            - Host: peer0.org1.chat-network.com
+              Port: 7051
+    - &Org2Org
+        Name: Org2MSP
+        ID: Org2MSP
+        MSPDir: ../crypto-config/peerOrganizations/org2.chat-network.com/msp
+        AnchorPeers:
+            - Host: peer0.org2.chat-network.com
+              Port: 7051
+    - &Org3Org
+        Name: Org3MSP
+        ID: Org3MSP
+        MSPDir: ../crypto-config/peerOrganizations/org3.chat-network.com/msp
+        AnchorPeers:
+            - Host: peer0.org3.chat-network.com
               Port: 7051
 
 ################################################################################

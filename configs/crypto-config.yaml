@@ -25,3 +25,30 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1
+  # ---------------------------------------------------------------------------
+  # scalable orgs will be appended as below
+  # ---------------------------------------------------------------------------
+
+  - Name: org1
+    Domain: org1.chat-network.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+
+  - Name: org2
+    Domain: org2.chat-network.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+
+  - Name: org3
+    Domain: org3.chat-network.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
