@@ -87,26 +87,26 @@ joinChannel
 echo "Updating anchor peer0 for official..."
 updateAnchorPeers 0 official
 
-## Install chaincode on peer0.org1 and peer0.org2
+## Install chaincode on peer0.official
 echo "Installing chaincode on peer0.official..."
 installChaincode 0 official mycc $CC_SRC_PATH
 installChaincode 0 official status $STATUS_CC_SRC_PATH
 
-# Instantiate chaincode on peer0.org2
-echo "Instantiating chaincode on peer0.org2..."
+# Instantiate chaincode on peer0.official
+echo "Instantiating chaincode on peer0.official..."
 instantiateChaincode 0 official mycc '{"Args":["init","a","100","b","200"]}' "AND ('OfficialMSP.peer')" 1.0
 instantiateChaincode 0 official status '{"Args":[]}' "AND ('OfficialMSP.peer')" 1.0
 
-# Query chaincode on peer0.org1
-echo "Querying chaincode on peer0.org1..."
+# Query chaincode on peer0.official
+echo "Querying chaincode on peer0.official..."
 chaincodeQuery 0 official 100
 
-# Invoke chaincode on peer0.org1
-echo "Sending invoke transaction on peer0.org1..."
+# Invoke chaincode on peer0.official
+echo "Sending invoke transaction on peer0.official..."
 chaincodeInvoke 0 official
 
 
-# Query on chaincode on peer1.org2, check if the result is 90
+# Query on chaincode on peer.official, check if the result is 90
 echo "Querying chaincode on peer0.official..."
 chaincodeQuery 0 official 90
 

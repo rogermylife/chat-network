@@ -4,7 +4,6 @@ export PATH=${PWD}/bin:$PATH
 export FABRIC_CFG_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/configs
 IMAGETAG=latest
 export IMAGE_TAG=$IMAGETAG
-COMPOSE_FILE=$FABRIC_CFG_PATH/docker-compose-cli.yaml
 LANGUAGE='golang'
 CLI_TIMEOUT=10
 CLI_DELAY=3
@@ -18,12 +17,7 @@ composeFileTpl="$FABRIC_CFG_PATH/docker-compose-cli-template.yaml"
 composeFile="$FABRIC_CFG_PATH/docker-compose-cli.yaml"
 
 ################################################################################
-#
-#   Section: Organizations
-#
-#   - This section defines the different organizational identities which will
-#   be referenced later in the configuration.
-#
+#   the template crypto-config.yaml needs
 ################################################################################
 cryptoFilePeerTpl=$'
   - Name: __ORGNAME__
@@ -36,12 +30,7 @@ cryptoFilePeerTpl=$'
 '
 
 ################################################################################
-#
-#   Section: Organizations
-#
-#   - This section defines the different organizational identities which will
-#   be referenced later in the configuration.
-#
+#   the template configtx.yaml needs
 ################################################################################
 ordererConsortimusOrgTpl=$'
                     - *__ORGID__Org
@@ -61,6 +50,17 @@ orgTpl=$'
             - Host: peer0.__ORGNAME__.chat-network.com
               Port: 7051
 '
+
+################################################################################
+#   the template dockercompose file needs
+################################################################################
+
+volumeTpl=$'
+  peer0.__ORGNAME__.chat-network.com:
+'
+
+peerServiceTemplateFile="configs/peer-service-template.yaml"
+
 
 echo "FABRIC_CFG_PATH=${FABRIC_CFG_PATH}"
 
@@ -180,19 +180,58 @@ function generateConfigs (){
     temp=$(echo "$officialChannelOrgTpl" | sed --expression="s/__ORGID__/${orgID}/g")
     officialChannelOrgs=$officialChannelOrgs$temp
 
+    # generate orgs
     temp=$(echo "$orgTpl" | sed --expression="s/__ORGID__/${orgID}/g")
-    echo $temp
     temp=$(echo "$temp" | sed --expression="s/__ORGNAME__/${orgName}/g")
     orgs=$orgs$temp
   done
   # sed -i "s/__ORDERER_CONSORTIMUS_ORGS__/${ordererConsortimusOrgs}/g" $configTxFile
   echo "$(awk -v r="$ordererConsortimusOrgs" '{gsub(/__ORDERER_CONSORTIMUS_ORGS__/,r)}1' $configTxFile )" > $configTxFile
   echo "$(awk -v r="$officialChannelOrgs" '{gsub(/__OFFICIAL_CHANNEL_ORGS__/,r)}1' $configTxFile )" > $configTxFile
-  echo "$orgs"
   echo "$(awk -v r="$orgs" '{gsub(/__ORGS__/,r)}1' $configTxFile )" > $configTxFile
 
-  # officialChannelOrgTpl
-  # orgTpl
+  echo 
+  echo "generating docker-compose-cli file $composeFile"
+  echo
+
+  cp configs/docker-compose-cli-template.yaml $composeFile
+  initPortList
+  volumes=""
+  services=""
+
+  for (( i=1; i<=$ORGS_NUM; i++ ))
+  do
+    orgName="org"$i
+    if [ $i = "1" ]; then
+      preOrgName="official"
+    else
+      preOrgName="org"$(($i -1 ))
+    fi
+
+    orgID="$(tr '[:lower:]' '[:upper:]' <<< ${orgName:0:1})${orgName:1}"
+    orgPrefix=
+
+    # generate volumes
+    temp=$(echo "$volumeTpl" | sed --expression="s/__ORGNAME__/${orgName}/g")
+    volumes=$volumes$temp
+
+    # generate services
+    getOrgPrefix orgPrefix
+    peerService=$( cat $peerServiceTemplateFile \
+      | sed --expression="s/__ORGNAME__/${orgName}/g" \
+      | sed --expression="s/__ORGID__/${orgID}/g" \
+      | sed --expression="s/__ORGPREFIX__/${orgPrefix}/g" \
+      | sed --expression="s/__PREORGNAME__/${preOrgName}/g" )
+    services=$services$peerService
+    echo "${orgPrefix}:${orgName}" >> portList 
+  done
+  echo "$(awk -v r="$volumes" '{gsub(/__VOLUMES__/,r)}1' $composeFile )" > $composeFile
+  echo "$(awk -v r="$services" '{gsub(/__SERVICES__/,r)}1' $composeFile )" > $composeFile
+  # echo "$services"
+  # echo "sorry bro, we are testing"
+  # exit 2
+
+  
 }
 
 # Generates network foundation
@@ -239,16 +278,24 @@ function generateOfficialChannelArtifacts() {
 
   echo
   echo "#################################################################"
-  echo "#######    Generating anchor peer update for Org1MSP   ##########"
+  echo "#######    Generating anchor peer update for Official  ##########"
   echo "#################################################################"
   set -x
   configtxgen -profile OfficialChannel -outputAnchorPeersUpdate channel-artifacts/OfficialMSPanchors.tx -channelID officialchannel -asOrg OfficialMSP
   res=$?
   set +x
   if [ $res -ne 0 ]; then
-    echo "Failed to generate anchor peer update for Org1MSP..."
+    echo "Failed to generate anchor peer update for OfficialMSP..."
     exit 1
   fi
+}
+
+function getOrgPrefix () {
+    orgPrefix=$1
+
+    lastLine=$(tail -n 1 portList)
+    orgPrefix=$(echo $lastLine | awk -F ':' '{print $1}')
+    orgPrefix=$(( $orgPrefix + 1 ))
 }
 
 function initPortList() {
@@ -271,7 +318,8 @@ function initPortList() {
 }
 
 function networkDown () {
-  docker-compose -f $COMPOSE_FILE  down --volumes --remove-orphans
+  docker-compose -f $composeFile  kill #down --volumes --remove-orphans
+  docker container purge --force
   docker volume prune -f
   # Don't remove the generated artifacts -- note, the ledgers are always removed
   # if [ "$MODE" != "restart" ]; then
@@ -289,17 +337,16 @@ function networkDown () {
 # Generate the needed certificates, the genesis block and start the network.
 function networkUp () {
   generateConfigs
-  echo "sorry bro, we are testing "
-  exit 2
   checkPrereqs
   # generate artifacts if they don't exist
   if [ ! -d "crypto-config" ]; then
     generateFoundation
-  fi
-  
-  initPortList
 
-  IMAGE_TAG=$IMAGETAG docker-compose -f $COMPOSE_FILE up -d 2>&1
+  else
+    echo "Please shut down the network first by ./manageNetwork.sh down"
+    exit 1
+  fi
+  IMAGE_TAG=$IMAGETAG docker-compose -f $composeFile up -d 2>&1
   
   if [ $? -ne 0 ]; then
     echo "ERROR !!!! Unable to start network"
@@ -323,6 +370,8 @@ function removeUnwantedImages() {
 }
 
 function replaceCAPrivateKey () {
+  : ${ORGS_NUM:="0"}
+  echo "ORGS_NUM is $ORGS_NUM"
   # sed on MacOSX does not support -i flag with a null extension. We will use
   # 't' for our back-up's extension and depete it at the end of the function
   ARCH=`uname -s | grep Darwin`
@@ -332,16 +381,24 @@ function replaceCAPrivateKey () {
     OPTS="-i"
   fi
 
-  # Copy the template to the file that will be modified to add the private key
-  cp configs/docker-compose-cli-template.yaml $COMPOSE_FILE
-
   # The next steps will replace the template's contents with the
   # actual values of the private key file names for the CA.
   CURRENT_DIR=$PWD
   cd crypto-config/peerOrganizations/official.chat-network.com/ca/
   PRIV_KEY=$(ls *_sk)
   cd "$CURRENT_DIR"
-  sed $OPTS "s/__CA_PRIVATE_KEY__/${PRIV_KEY}/g" $COMPOSE_FILE
+  sed $OPTS "s/__CA_PRIVATE_KEY__/${PRIV_KEY}/g" $composeFile
+
+  for (( i=1; i<=$ORGS_NUM; i++ ))
+  do
+    orgName="org"$i
+    orgID="$(tr '[:lower:]' '[:upper:]' <<< ${orgName:0:1})${orgName:1}"
+    CURRENT_DIR=$PWD
+    cd crypto-config/peerOrganizations/${orgName}.chat-network.com/ca/
+    PRIV_KEY=$(ls *_sk)
+    cd "$CURRENT_DIR"
+    sed $OPTS "s/__${orgName}_CA_PRIVATE_KEY__/${PRIV_KEY}/g" $composeFile
+  done
   # If MacOSX, remove the temporary backup of the docker-compose file
   if [ "$ARCH" == "Darwin" ]; then
     rm docker-compose-e2e.yamlt

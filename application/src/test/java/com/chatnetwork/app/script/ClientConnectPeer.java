@@ -1,6 +1,6 @@
 package com.chatnetwork.app.script;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.MalformedURLException;
 import java.util.logging.Level;
@@ -13,9 +13,9 @@ import org.hyperledger.fabric_ca.sdk.exception.InvalidArgumentException;
 import com.chatnetwork.app.client.Client;
 import com.chatnetwork.app.config.Config;
 
-public class ClientRegisterUser extends Script implements Runnable{
+public class ClientConnectPeer extends Script implements Runnable{
 
-	public ClientRegisterUser(String orgName) {
+	public ClientConnectPeer(String orgName) {
 		super(orgName);
 	}
 
@@ -24,26 +24,13 @@ public class ClientRegisterUser extends Script implements Runnable{
 		Logger.getLogger(Thread.currentThread().getName()).log(Level.INFO,"Time");
 		try {
 			Client client = new Client(new Config(getOrgName()));
-			Logger.getLogger(Thread.currentThread().getName()).log(Level.INFO,"Time");
-			boolean result;
-			String response;
-			result = client.registerUser();
-			assertTrue("register user failed", result);
-			for (int i=0;i<20;i++){
-				Thread.sleep(100);
-				response = client.qeryUserStatus();
-				result = response.contains(client.getConfig().getOrgName());
-				if(result)
-					break;
-			}
-			assertTrue("query userStatus failed", result);
+			return;
 		} catch (MalformedURLException | EnrollmentException | InvalidArgumentException | CryptoException
 				| org.hyperledger.fabric.sdk.exception.InvalidArgumentException e) {
-			e.printStackTrace();
-			return;
-		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		fail(getOrgName() + " connect failed");
 		
 	}
 

@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-version: '2'
+version: '2.2'
 
 volumes:
   orderer.chat-network.com:
   peer0.official.chat-network.com:
+__VOLUMES__
 
 networks:
   chat-network:
@@ -54,8 +55,8 @@ services:
     environment:
       - GOPATH=/opt/gopath
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      # - CORE_LOGGING_LEVEL=DEBUG
-      - CORE_LOGGING_LEVEL=INFO
+      - CORE_LOGGING_LEVEL=DEBUG
+      # - CORE_LOGGING_LEVEL=INFO
       - CORE_PEER_ID=cli
       - CORE_PEER_ADDRESS=peer0.official.chat-network.com:7051
       - CORE_PEER_LOCALMSPID=OfficialMSP
@@ -77,3 +78,4 @@ services:
       - peer0.official.chat-network.com
     networks:
       - chat-network
+__SERVICES__
