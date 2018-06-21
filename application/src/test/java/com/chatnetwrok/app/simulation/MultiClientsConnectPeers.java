@@ -7,11 +7,11 @@ import org.junit.Test;
 import com.chatnetwork.app.script.ClientConnectPeer;
 
 public class MultiClientsConnectPeers {
-	public int num = 50;
+	public int num = 500;
 	public int start = 1;
 	@Test
 	public void multiClientsConnectPeers() {
-		Thread[] threads = new Thread[100];
+		Thread[] threads = new Thread[1000];
 		for (int i=start;i<start+num;i++) {
 			threads[i] = new Thread(new ClientConnectPeer("org"+i), "org"+i);
 			threads[i].start();

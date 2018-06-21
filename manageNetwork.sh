@@ -202,10 +202,10 @@ function generateConfigs (){
   for (( i=1; i<=$ORGS_NUM; i++ ))
   do
     orgName="org"$i
-    if [ $i = "1" ]; then
+    if [[ $i -lt 11 ]]; then
       preOrgName="official"
     else
-      preOrgName="org"$(($i -1 ))
+      preOrgName="org"$(($i -10 ))
     fi
 
     orgID="$(tr '[:lower:]' '[:upper:]' <<< ${orgName:0:1})${orgName:1}"
@@ -226,10 +226,11 @@ function generateConfigs (){
     echo "${orgPrefix}:${orgName}" >> portList 
   done
   echo "$(awk -v r="$volumes" '{gsub(/__VOLUMES__/,r)}1' $composeFile )" > $composeFile
-  echo "$(awk -v r="$services" '{gsub(/__SERVICES__/,r)}1' $composeFile )" > $composeFile
-  # echo "$services"
-  # echo "sorry bro, we are testing"
-  # exit 2
+  # echo "$(awk -v r="$services" '{gsub(/__SERVICES__/,r)}1' $composeFile )" > $composeFile
+  echo "$services" > services.txt
+  python replace.py
+  # Because awk cona not deal with replacement issue,
+  # use python to solve it insteat.
 
   
 }
@@ -319,7 +320,7 @@ function initPortList() {
 
 function networkDown () {
   docker-compose -f $composeFile  kill #down --volumes --remove-orphans
-  docker container purge --force
+  docker container prune --force
   docker volume prune -f
   # Don't remove the generated artifacts -- note, the ledgers are always removed
   # if [ "$MODE" != "restart" ]; then
