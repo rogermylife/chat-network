@@ -1,5 +1,6 @@
 package com.chatnetwork.app.config;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,17 +16,21 @@ import com.google.gson.stream.JsonReader;
 
 
 public class Config {
-	private String caUrl;
-	private String orgName;
-	private String orgMSP;
 	private String adminAccount;
 	private String adminPassword;
-	private String peerName;
-	private String peerUrl;
+	private String caUrl;
+	private String cert;
+	private String defaultChannelName;
 	private String eventhubUrl;
 	private String ordererName;
 	private String ordererUrl;
-	private String defaultChannelName;
+	private String orgName;
+	private String orgMSP;
+	private String peerName;
+	private String peerUrl;
+	private String pk;
+	
+	
 	public static void main(String[] args) {
 		Config config = newConfig();
 		Gson gson = new Gson();
@@ -37,18 +42,28 @@ public class Config {
 		
 	}
 	public Config(String orgName) {
+		String userBasePath = ".." + File.separator + "crypto-config" + File.separator + 
+					   "peerOrganizations" + File.separator + 
+					   String.format("%s.chat-network.com", orgName) + File.separator + 
+					   "users" + File.separator + 
+					   String.format("Admin@%s.chat-network.com", orgName) + File.separator + "msp";
 		String prefix = Util.getPortPrefixString(orgName);
-		this.caUrl = String.format("http://localhost:%s4",prefix);
-	    this.orgName = orgName;
-	    this.orgMSP = String.format("%sMSP", orgName.substring(0, 1).toUpperCase() + orgName.substring(1));
 		this.adminAccount = "admin";
 	    this.adminPassword = "adminpw";
-		this.peerName = String.format("peer0.%s.chat-network.com", orgName);
-		this.peerUrl = String.format("grpc://localhost:%s1", prefix);
+		this.caUrl = String.format("http://localhost:%s4",prefix);
+		this.cert = userBasePath + File.separator + "admincerts";;
+		this.defaultChannelName = "officialchannel";
 		this.eventhubUrl = String.format("grpc://localhost:%s3", prefix);
 		this.ordererName = "orderer.chat-network.com";
 		this.ordererUrl = "grpc://localhost:7050";
-		this.defaultChannelName = "officialchannel";
+	    this.orgName = orgName;
+	    this.orgMSP = String.format("%sMSP", orgName.substring(0, 1).toUpperCase() + orgName.substring(1));
+//		this.peerName = String.format("peer0.%s.chat-network.com", orgName);
+		this.peerName = orgName;
+		this.peerUrl = String.format("grpc://localhost:%s1", prefix);
+		this.pk = userBasePath + File.separator + "keystore";
+		
+		
 	}
 	
 	static public Config newConfig()
@@ -161,6 +176,22 @@ public class Config {
 
 	public void setDefaultChannelName(String defaultChannelName) {
 		this.defaultChannelName = defaultChannelName;
+	}
+
+	public String getPk() {
+		return pk;
+	}
+
+	public void setPk(String pk) {
+		this.pk = pk;
+	}
+
+	public String getCert() {
+		return cert;
+	}
+
+	public void setCert(String cert) {
+		this.cert = cert;
 	}
 
 }

@@ -1,14 +1,21 @@
 package com.chatnetwork.app.client;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.HFClient;
+import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
@@ -35,33 +42,68 @@ public class Client {
 	private HFClient hfClient;
 	
 	
-	public Client () throws MalformedURLException, EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
-		this("Config.json");
-	}
+//	public Client () throws MalformedURLException, EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
+//		this("Config.json");
+//	}
+//	
+//	public Client (String configFile) throws MalformedURLException, EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
+//		this(Config.newConfig(configFile));
+//	}
 	
-	public Client (String configFile) throws MalformedURLException, EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
-		this(Config.newConfig(configFile));
-	}
-	
-	public Client (Config config) throws MalformedURLException, EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
+	public Client (Config config) throws EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
 		this.config = config;
 		this.caClient = Util.newCAClient(config.getCAUrl());
-		this.admin = new AppUser(config, caClient.enroll(config.getAdminAccount(), config.getAdminPassword()));
+		Enrollment enrollment = Util.newEnrollment(config.getPk(), config.getCert());
+		this.admin = new AppUser(config, enrollment);
 		this.hfClient = Util.newHFClient(admin);
-		
-		
 	}
 	
 	public boolean createChatRoom() {
 		return true;
 	}
 	
+	public AppUser getAdmin() {
+		return this.admin;
+	}
+	
 	public Config getConfig() {
 		return this.config;
 	}
 	
-	public boolean inviteUser() {
+	public HFClient getHFClient() {
+		return this.hfClient;
+	}
+	
+	public boolean joinChannel(String channelName) throws org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
+		Channel channel = hfClient.getChannel(channelName);
+//											   officialchannel
+		if(channel ==null)
+		{
+			Logger.getLogger(channelName).log(Level.INFO, "channel get failed");
+			return false;
+		}
+		Peer peer01 = hfClient.newPeer("peer0.org1.chat-network.com", "grpc://localhost:8011");
+		channel.addPeer(peer01);
+		Collection peers = channel.getPeers();
+        Iterator peerIter = peers.iterator();
+        while (peerIter.hasNext())
+        {
+        	  Peer pr = (Peer) peerIter.next();
+        	  Logger.getLogger(channelName).log(Level.INFO,pr.getName()+ " at " + pr.getUrl());
+        }
+		
 		return true;
+	}
+	
+	public boolean inviteUser(String channelName, Peer peer) {
+		Channel channel = hfClient.getChannel(channelName);
+		try {
+			channel.joinPeer(peer);
+		} catch (ProposalException e) {
+			e.printStackTrace();
+			return false;
+		}
+		return invoke("officialchannel", "Status", "inviteUser", new String[] {peer.getName(), channelName});
 	}
 	
 	public boolean invoke(String channelName, String chaincodeName, String functionName, String[] args) {
@@ -142,7 +184,7 @@ public class Client {
 		return invoke(config.getDefaultChannelName(), "status", "registerUser", new String[] {config.getOrgName()});
 	}
 	
-	public boolean sendMsg() {
+	public boolean sendMsg() throws org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
 		return true;
 	}
 }

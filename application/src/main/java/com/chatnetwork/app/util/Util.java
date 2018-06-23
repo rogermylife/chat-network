@@ -1,11 +1,24 @@
 package com.chatnetwork.app.util;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Properties;
+
+import javax.xml.bind.DatatypeConverter;
 
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -17,6 +30,7 @@ import org.hyperledger.fabric_ca.sdk.HFCAClient;
 
 import com.chatnetwork.app.config.Config;
 import com.chatnetwork.app.user.AppUser;
+import com.chatnetwork.app.user.CAEnrollment;
 
 public class Util {
 	
@@ -34,24 +48,66 @@ public class Util {
 		return client;
 	}
 	
+	static public Channel newChannel(String channelName, HFClient client, Config config )
+						throws InvalidArgumentException, TransactionException {
+			Channel channel = client.newChannel(channelName);
+	//		System.out.println("GGGGGGGGGG:    "+peerUrl);
+			channel.addPeer(client.newPeer(config.getOrgName(), config.getPeerUrl()));
+			channel.addEventHub(client.newEventHub("eventhub", config.getEventhubUrl()));
+			channel.addOrderer(client.newOrderer("orderer", config.getOrdererUrl()));
+			channel.initialize();
+			
+			return channel;
+		}
+
+	public static CAEnrollment newEnrollment(String keyFolderPath, String certFolderPath)
+			throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, CryptoException {
+		File pkFolder = new File(keyFolderPath);
+		File[] pkFiles = pkFolder.listFiles();
+		String keyFileName = pkFiles[0].getName();
+		
+		File certFolder = new File(certFolderPath);
+		File[] certFiles = certFolder.listFiles();
+		String certFileName = certFiles[0].getName();
+		
+		PrivateKey key = null;
+		String certificate = null;
+		InputStream isKey = null;
+		BufferedReader brKey = null;
+	
+		try {
+	
+			isKey = new FileInputStream(keyFolderPath + File.separator + keyFileName);
+			brKey = new BufferedReader(new InputStreamReader(isKey));
+			StringBuilder keyBuilder = new StringBuilder();
+	
+			for (String line = brKey.readLine(); line != null; line = brKey.readLine()) {
+				if (line.indexOf("PRIVATE") == -1) {
+					keyBuilder.append(line);
+				}
+			}
+	
+			certificate = new String(Files.readAllBytes(Paths.get(certFolderPath, certFileName)));
+	
+			byte[] encoded = DatatypeConverter.parseBase64Binary(keyBuilder.toString());
+			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
+			KeyFactory kf = KeyFactory.getInstance("ECDSA");
+			key = kf.generatePrivate(keySpec);
+		} finally {
+			isKey.close();
+			brKey.close();
+		}
+	
+		CAEnrollment enrollment = new CAEnrollment(key, certificate);
+		return enrollment;
+	}
+
 	static public HFClient newHFClient(AppUser user) throws CryptoException, InvalidArgumentException {
 		CryptoSuite cryptoSuite = CryptoSuite.Factory.getCryptoSuite();
 		HFClient client = HFClient.createNewInstance();
 		client.setCryptoSuite(cryptoSuite);
 		client.setUserContext(user);
 		return client;
-	}
-	
-	static public Channel newChannel(String channelName, HFClient client, Config config )
-					throws InvalidArgumentException, TransactionException {
-		Channel channel = client.newChannel(channelName);
-//		System.out.println("GGGGGGGGGG:    "+peerUrl);
-		channel.addPeer(client.newPeer("peer", config.getPeerUrl()));
-		channel.addEventHub(client.newEventHub("eventhub", config.getEventhubUrl()));
-		channel.addOrderer(client.newOrderer("orderer", config.getOrdererUrl()));
-		channel.initialize();
-		
-		return channel;
 	}
 	
 	static public String getPortPrefixString(String orgName) {

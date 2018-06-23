@@ -30,7 +30,7 @@ setGlobals () {
 	PEER=$1
 	ORG=$2
 	ORGID="$(tr '[:lower:]' '[:upper:]' <<< ${ORG:0:1})${ORG:1}"
-	if [ $ORG = "official" ]; then
+	if [ $ORG = "official" ] || [[ $ORG =~ ^org ]]; then
 		peerOrgPath="/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations"
 	else
 		peerOrgPath="/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/newOrgs/$ORG/peerOrganizations"
