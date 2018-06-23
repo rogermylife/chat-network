@@ -2,7 +2,10 @@ package com.chatnetwork.app.script;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,11 +40,20 @@ public class ClientRegisterUser extends Script implements Runnable{
 					break;
 			}
 			assertTrue("query userStatus failed", result);
-		} catch (MalformedURLException | EnrollmentException | InvalidArgumentException | CryptoException
+		} catch (MalformedURLException | EnrollmentException | CryptoException
 				| org.hyperledger.fabric.sdk.exception.InvalidArgumentException e) {
 			e.printStackTrace();
 			return;
 		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		

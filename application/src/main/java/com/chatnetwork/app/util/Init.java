@@ -25,23 +25,24 @@ import com.chatnetwork.app.config.Config;
 public class Init {
 	
 	public static final int Start = 1;
-	public static final int End = 1;
+	public static final int End = 5;
 
 	public static void main(String[] args) throws EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException, TransactionException, ProposalException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
 		Logger logger = Logger.getLogger(Init.class.getName());
+		Collection<Peer> peers;
 		
 		
-		Client officialClient = new Client(new Config("official"));
-		Channel officialChannel = Util.newChannel("officialchannel", officialClient.getHFClient(), officialClient.getConfig());
-		Collection<Peer> peers = officialChannel.getPeers();
-		officialClient.installChaincode("status", "1.0", officialClient.getConfig().getChaincodeBase(), 
-										officialClient.getConfig().getChaincodeStatus(), peers);
-		boolean result = officialClient.instantiateChainCode("status", "1.0", officialClient.getConfig().getChaincodeStatus(), 
-											"officialchannel", new String[] {});
-		if (!result) {
-			System.out.println("official instantiateChainCode failed");
-			return;
-		}
+//		Client officialClient = new Client(new Config("official"));
+//		Channel officialChannel = Util.newChannel("officialchannel", officialClient.getHFClient(), officialClient.getConfig());
+//		peers = officialChannel.getPeers();
+//		officialClient.installChaincode("status", "1.0", officialClient.getConfig().getChaincodeBase(), 
+//										officialClient.getConfig().getChaincodeStatus(), peers);
+//		boolean result = officialClient.instantiateChainCode("status", "1.0", officialClient.getConfig().getChaincodeStatus(), 
+//											"officialchannel", new String[] {});
+//		if (!result) {
+//			System.out.println("official instantiateChainCode failed");
+//			return;
+//		}
 
 		
 		for (int i=Start; i<=End; ++i )
