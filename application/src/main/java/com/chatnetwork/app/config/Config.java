@@ -20,6 +20,17 @@ public class Config {
 	private String adminPassword;
 	private String caUrl;
 	private String cert;
+	private String chaincodeBase;
+	private String chaincodeChatroom;
+	private String chaincodeStatus;
+	public String getChaincodeStatus() {
+		return chaincodeStatus;
+	}
+
+	public void setChaincodeStatus(String chaincodeStatus) {
+		this.chaincodeStatus = chaincodeStatus;
+	}
+
 	private String defaultChannelName;
 	private String eventhubUrl;
 	private String ordererName;
@@ -51,7 +62,10 @@ public class Config {
 		this.adminAccount = "admin";
 	    this.adminPassword = "adminpw";
 		this.caUrl = String.format("http://localhost:%s4",prefix);
-		this.cert = userBasePath + File.separator + "admincerts";;
+		this.cert = userBasePath + File.separator + "admincerts";
+		this.chaincodeBase = ".." + File.separator + "chaincode";
+		this.chaincodeChatroom = "chatroom";
+		this.chaincodeStatus = "status";
 		this.defaultChannelName = "officialchannel";
 		this.eventhubUrl = String.format("grpc://localhost:%s3", prefix);
 		this.ordererName = "orderer.chat-network.com";
@@ -192,6 +206,21 @@ public class Config {
 
 	public void setCert(String cert) {
 		this.cert = cert;
+	}
+	public String getChaincodeBase() {
+		return chaincodeBase;
+	}
+
+	public void setChaincodeBase(String chaincodeBase) {
+		this.chaincodeBase = chaincodeBase;
+	}
+
+	public String getChaincodeChatroom() {
+		return chaincodeChatroom;
+	}
+
+	public void setChaincodeChatroom(String chaincodeChatroom) {
+		this.chaincodeChatroom = chaincodeChatroom;
 	}
 
 }

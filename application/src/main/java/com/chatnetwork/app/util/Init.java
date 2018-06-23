@@ -1,11 +1,13 @@
 package com.chatnetwork.app.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,9 +25,25 @@ import com.chatnetwork.app.config.Config;
 public class Init {
 	
 	public static final int Start = 1;
-	public static final int End = 50;
+	public static final int End = 1;
 
 	public static void main(String[] args) throws EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException, TransactionException, ProposalException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+		Logger logger = Logger.getLogger(Init.class.getName());
+		
+		
+		Client officialClient = new Client(new Config("official"));
+		Channel officialChannel = Util.newChannel("officialchannel", officialClient.getHFClient(), officialClient.getConfig());
+		Collection<Peer> peers = officialChannel.getPeers();
+		officialClient.installChaincode("status", "1.0", officialClient.getConfig().getChaincodeBase(), 
+										officialClient.getConfig().getChaincodeStatus(), peers);
+		boolean result = officialClient.instantiateChainCode("status", "1.0", officialClient.getConfig().getChaincodeStatus(), 
+											"officialchannel", new String[] {});
+		if (!result) {
+			System.out.println("official instantiateChainCode failed");
+			return;
+		}
+
+		
 		for (int i=Start; i<=End; ++i )
 		{
 			String orgName = "org"+i;
@@ -40,13 +58,24 @@ public class Init {
 			try {
 				channel.joinPeer(client.getHFClient().newPeer(orgName, String.format("grpc://localhost:%s1", prefix)));
 			} catch (Exception e) {
-				if (e.getMessage().contains("Cannot create ledger from genesis block, due to LedgerID already exists"))
+				if (e.getMessage().contains("Cannot create ledger from genesis block, due to LedgerID already exists")) {
 					Logger.getLogger(Init.class.getName()).log(Level.INFO, String.format("org [%s] is alreadgy in the channel [%s]", orgName, "officialchannel"));
+					channel.addPeer(client.getHFClient().newPeer(client.getConfig().getPeerName(),
+																 client.getConfig().getPeerUrl()));
+				}
+					
 				else
 					throw e;
 			}
+			// In normal, there is only one peer listed.
+			peers = channel.getPeers();
+			if (peers.isEmpty()) {
+				logger.log(Level.INFO,String.format("[%s] peers of channel is empty", orgName));
+			}
+			client.installChaincode("status", "1.0", client.getConfig().getChaincodeBase(), 
+									client.getConfig().getChaincodeStatus(), peers);
 		}
-		Logger.getLogger(Init.class.getName()).log(Level.INFO,String.format("org %d~%d is inited done in the officialchannel", Start, End));
+		logger.log(Level.INFO,String.format("org %d~%d is inited done in the officialchannel", Start, End));
         
 	}
 

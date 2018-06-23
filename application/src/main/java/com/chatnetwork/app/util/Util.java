@@ -1,6 +1,9 @@
 package com.chatnetwork.app.util;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -16,15 +19,23 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Collection;
 import java.util.Properties;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
+import org.hyperledger.fabric.sdk.helper.Utils;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 
@@ -109,6 +120,57 @@ public class Util {
 		client.setUserContext(user);
 		return client;
 	}
+	
+	/**
+     * Generate a targz inputstream from source folder.
+     *
+     * @param src        Source location
+     * @param pathPrefix prefix to add to the all files found.
+     * @return return inputstream.
+     * @throws IOException
+     */
+    public static InputStream newTarGzInputStream(File src, String pathPrefix) throws IOException {
+        File sourceDirectory = src;
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(500000);
+
+        String sourcePath = sourceDirectory.getAbsolutePath();
+
+        TarArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GzipCompressorOutputStream(new BufferedOutputStream(bos)));
+        archiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+
+        try {
+            Collection<File> childrenFiles = org.apache.commons.io.FileUtils.listFiles(sourceDirectory, null, true);
+
+            ArchiveEntry archiveEntry;
+            FileInputStream fileInputStream;
+            for (File childFile : childrenFiles) {
+                String childPath = childFile.getAbsolutePath();
+                String relativePath = childPath.substring((sourcePath.length() + 1), childPath.length());
+
+                if (pathPrefix != null) {
+                    relativePath = Utils.combinePaths(pathPrefix, relativePath);
+                }
+
+                relativePath = FilenameUtils.separatorsToUnix(relativePath);
+
+                archiveEntry = new TarArchiveEntry(childFile, relativePath);
+                fileInputStream = new FileInputStream(childFile);
+                archiveOutputStream.putArchiveEntry(archiveEntry);
+
+                try {
+                    IOUtils.copy(fileInputStream, archiveOutputStream);
+                } finally {
+                    IOUtils.closeQuietly(fileInputStream);
+                    archiveOutputStream.closeArchiveEntry();
+                }
+            }
+        } finally {
+            IOUtils.closeQuietly(archiveOutputStream);
+        }
+
+        return new ByteArrayInputStream(bos.toByteArray());
+    }
 	
 	static public String getPortPrefixString(String orgName) {
 		String prefix = new String();

@@ -90,12 +90,12 @@ updateAnchorPeers 0 official
 ## Install chaincode on peer0.official
 echo "Installing chaincode on peer0.official..."
 installChaincode 0 official mycc $CC_SRC_PATH
-installChaincode 0 official status $STATUS_CC_SRC_PATH
+# installChaincode 0 official status $STATUS_CC_SRC_PATH
 
 # Instantiate chaincode on peer0.official
 echo "Instantiating chaincode on peer0.official..."
 instantiateChaincode 0 official mycc '{"Args":["init","a","100","b","200"]}' "AND ('OfficialMSP.peer')" 1.0
-instantiateChaincode 0 official status '{"Args":[]}' "AND ('OfficialMSP.peer')" 1.0
+# instantiateChaincode 0 official status '{"Args":[]}' "AND ('OfficialMSP.peer')" 1.0
 
 # Query chaincode on peer0.official
 echo "Querying chaincode on peer0.official..."

@@ -29,7 +29,7 @@ public class ClientTest {
 
 	@Test
 	public void testRegisterUser() throws EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-		Client client = new Client(new Config("official"));
+		Client client = new Client(new Config("org1"));
 		boolean result;
 		String response;
 		result = client.registerUser();
@@ -41,8 +41,8 @@ public class ClientTest {
 	
 	@Test
 	public void testJoinChannel() throws EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-		Client client = new Client(new Config("org1"));
-		client.qeryUserStatus();
+//		Client client = new Client(new Config("org1"));
+//		client.qeryUserStatus();
 		//client.registerUser();
 		//client.qeryUserStatus();
 		//client.joinChannel(client.getConfig().getDefaultChannelName());
