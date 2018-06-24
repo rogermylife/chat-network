@@ -39,6 +39,7 @@ import com.chatnetwork.app.chaincode.Invoke;
 import com.chatnetwork.app.chaincode.Query;
 import com.chatnetwork.app.config.Config;
 import com.chatnetwork.app.user.AppUser;
+import com.chatnetwork.app.util.Init;
 import com.chatnetwork.app.util.Util;
 
 public class Client {
@@ -65,7 +66,7 @@ public class Client {
 		this.hfClient = Util.newHFClient(admin);
 	}
 	
-	public boolean createChatRoom() {
+	public boolean createChatRoom(String channelName) {
 		return true;
 	}
 	
@@ -83,23 +84,49 @@ public class Client {
 	
 	public boolean joinChannel(String channelName) throws org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
 		Channel channel = hfClient.getChannel(channelName);
-//											   officialchannel
-		if(channel ==null)
-		{
-			Logger.getLogger(channelName).log(Level.INFO, "channel get failed");
+		if(channel ==null) {
+			Logger.getLogger(channelName).log(Level.SEVERE, String.format("[%s]-> get channel [%s] failed", this.config.getPeerName(), channelName));
 			return false;
 		}
-		Peer peer01 = hfClient.newPeer("peer0.org1.chat-network.com", "grpc://localhost:8011");
-		channel.addPeer(peer01);
-		Collection peers = channel.getPeers();
-        Iterator peerIter = peers.iterator();
-        while (peerIter.hasNext())
-        {
-        	  Peer pr = (Peer) peerIter.next();
-        	  Logger.getLogger(channelName).log(Level.INFO,pr.getName()+ " at " + pr.getUrl());
-        }
-		
-		return true;
+		return joinChannel(channel);
+	}
+	
+	public boolean joinChannel(Channel channel) {
+		if(channel ==null) {
+			Logger.getLogger(Client.class.getName()).log(Level.SEVERE, String.format("[%s]-> channel is null", this.config.getPeerName()));
+			return false;
+		}
+		try {
+			return joinChannel(channel, this.hfClient.newPeer(this.config.getPeerName(), this.config.getPeerUrl()));
+		} catch (InvalidArgumentException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	public boolean joinChannel(Channel channel, Peer peer) {
+		try {
+			channel.joinPeer(peer);
+			return true;
+		} catch (Exception e) {
+			if (e.getMessage().contains("Cannot create ledger from genesis block, due to LedgerID already exists")) {
+				Logger.getLogger(Init.class.getName()).log(Level.WARNING, String.format("[%s]-> is alreadgy in the channel [%s]", this.config.getOrgName(), channel.getName()));
+				try {
+					channel.addPeer(peer);
+				} catch (InvalidArgumentException e1) {
+					e1.printStackTrace();
+					return false;
+				}
+				return true;
+			}
+			else
+				e.printStackTrace();
+		}
+		return false;
+	}
+	
+	public boolean initChatRoom(String channelName) {
+		return invoke(channelName, "chatroom", "init", new String[] {channelName});
 	}
 	
 	public boolean installChaincode(String name, String version, String base, String path, Collection<Peer> peers) throws InvalidArgumentException, IOException, ProposalException {
@@ -107,13 +134,12 @@ public class Client {
 		ChaincodeID.Builder chaincodeIDBuilder = ChaincodeID.newBuilder()
 												 .setName(name).setVersion(version).setPath(path);
 		ChaincodeID chaincodeID = chaincodeIDBuilder.build();
-		Logger.getLogger(Client.class.getName()).log(Level.INFO,
-				"Deploying chaincode " + name + " using Fabric client " + hfClient.getUserContext().getMspId()
-						+ " " + hfClient.getUserContext().getName());
+//		Logger.getLogger(Client.class.getName()).log(Level.INFO,
+//				"Deploying chaincode " + name + " using Fabric client " + hfClient.getUserContext().getMspId()
+//						+ " " + hfClient.getUserContext().getName());
 		request.setChaincodeID(chaincodeID);
 		request.setUserContext(hfClient.getUserContext());
 		request.setChaincodeSourceLocation(new File(base));
-//		request.setUserContext(hfClient.getUserContext());
 		request.setChaincodeVersion(version);
 		
 		Collection<ProposalResponse> responses = hfClient.sendInstallProposal(request, peers);
@@ -121,9 +147,14 @@ public class Client {
 		for (ProposalResponse response : responses) {
             if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
                 String temp = String.format("Successful install chaincode [%s] proposal response Txid: %s from peer %s", name, response.getTransactionID(), response.getPeer().getName());
-                System.out.println(temp);
+                Logger.getLogger(Client.class.getName()).log(Level.FINE, temp);
                 res = true;
             } else {
+            	if (response.getMessage().contains("Error installing chaincode code") && response.getMessage().contains("exists")) {
+            		Logger.getLogger(Client.class.getName()).log(Level.WARNING, String.format("[%s]-> chaincode [%s]:%s is installed", response.getPeer().getName(), name, version));
+            		return true;
+            	}
+            	System.out.println(response.getMessage());
             	res = false;
             }
         }
@@ -149,15 +180,18 @@ public class Client {
 			return false;
 		}
 
-        System.out.println("Sending instantiateProposalRequest");
         Collection<ProposalResponse> responses;
 		try {
 			responses = this.hfClient.getChannel(channelName).sendInstantiationProposal(instantiateProposalRequest);
 			for (ProposalResponse response : responses) {
 	            if (response.isVerified() && response.getStatus() == ProposalResponse.Status.SUCCESS) {
 	                String temp = String.format("Succesful instantiate chaincode [%s] proposal Txid: %s from peer %s", name, response.getTransactionID(), response.getPeer().getName());
-	                System.out.println(temp);
+	                Logger.getLogger(Client.class.getName()).log(Level.FINE, temp);
 	            } else {
+	            	if (response.getMessage().contains("chaincode exists")) {
+	            		Logger.getLogger(Client.class.getName()).log(Level.WARNING, String.format("[%s]-> chaincode [%s] is instantiated", response.getPeer().getName(), name));
+	            		return true;
+	            	}
 	            	String temp = String.format("Failed instantiate chaincode [%s] proposal Txid: %s from peer %s", name, response.getTransactionID(), response.getPeer().getName());
 	                System.out.println(temp);
 	                System.out.println(response.getMessage());
@@ -165,9 +199,10 @@ public class Client {
 	            }
 	        }
 	        
-	        CompletableFuture<TransactionEvent> cf = hfClient.getChannel(channelName).sendTransaction(responses);
-			Logger.getLogger(Client.class.getName()).log(Level.INFO,
-					"Chaincode " + name + " on channel " + channelName + " instantiation " + cf);
+	        hfClient.getChannel(channelName).sendTransaction(responses);
+//	        CompletableFuture<TransactionEvent> cf = hfClient.getChannel(channelName).sendTransaction(responses);
+//			Logger.getLogger(Client.class.getName()).log(Level.INFO,
+//					"Chaincode [" + name + "] on channel " + channelName + " instantiation " + cf);
 		} catch (InvalidArgumentException | ProposalException e) {
 			e.printStackTrace();
 			return false;
@@ -189,9 +224,9 @@ public class Client {
 	
 	public boolean invoke(String channelName, String chaincodeName, String functionName, String[] args) {
 		try {
-			Channel channel = Util.newChannel(config.getDefaultChannelName(), hfClient, config);
+			Channel channel = Util.newChannel(channelName, hfClient, config);
 			TransactionProposalRequest tpr = hfClient.newTransactionProposalRequest();
-			tpr.setChaincodeID(ChaincodeID.newBuilder().setName("status").build());
+			tpr.setChaincodeID(ChaincodeID.newBuilder().setName(chaincodeName).build());
 			tpr.setFcn(functionName);
 			tpr.setArgs(args);
 			tpr.setProposalWaitTime(30000);

@@ -7,7 +7,7 @@ import org.junit.Test;
 import com.chatnetwork.app.script.ClientRegisterUser;
 
 public class MultiClientsRegisterUser {
-	public int start = 4;
+	public int start = 1;
 	public int end = 5;
 	@Test
 	public void multiClientsRegisterUser() {
