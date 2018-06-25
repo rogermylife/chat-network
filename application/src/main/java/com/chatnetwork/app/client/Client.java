@@ -302,7 +302,9 @@ public class Client {
 		return invoke(config.getDefaultChannelName(), "status", "registerUser", new String[] {config.getOrgName()});
 	}
 	
-	public boolean sendMsg() throws org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
-		return true;
+	public boolean sendMsg(String channelName, String content) throws org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
+		return invoke(channelName, "chatroom", "addMsg", new String[] {this.config.getOrgName(), 
+																	   Long.toString(System.currentTimeMillis()), 
+																	   content});
 	}
 }
