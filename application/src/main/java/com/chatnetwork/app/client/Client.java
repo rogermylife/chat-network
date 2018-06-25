@@ -224,7 +224,7 @@ public class Client {
 	
 	public boolean invoke(String channelName, String chaincodeName, String functionName, String[] args) {
 		try {
-			Channel channel = Util.newChannel(channelName, hfClient, config);
+			Channel channel = this.hfClient.getChannel(channelName);
 			TransactionProposalRequest tpr = hfClient.newTransactionProposalRequest();
 			tpr.setChaincodeID(ChaincodeID.newBuilder().setName(chaincodeName).build());
 			tpr.setFcn(functionName);
@@ -235,25 +235,25 @@ public class Client {
 			for (ProposalResponse pres : response) {
 				if (pres.getStatus() == ProposalResponse.Status.SUCCESS) {
 					String stringResponse = new String(pres.getChaincodeActionResponsePayload());
-					Logger.getLogger(Client.class.getName()).log(Level.INFO,
+					Logger.getLogger(Client.class.getName()).log(Level.FINE,
 							"Transaction proposal on channel " + channelName + " " + pres.getMessage() + " "
 									+ pres.getStatus() + " with transaction id:" + pres.getTransactionID());
-					Logger.getLogger(Client.class.getName()).log(Level.INFO,stringResponse);
+					Logger.getLogger(Client.class.getName()).log(Level.FINE,stringResponse);
 				}
 				else {
-					Logger.getLogger(Client.class.getName()).log(Level.INFO,"response failed \n"+pres.getMessage() + " " 
+					Logger.getLogger(Client.class.getName()).log(Level.SEVERE,"response failed \n"+pres.getMessage() + " " 
 										+ pres.getStatus() + " with transaction id:" + pres.getTransactionID());
 					return false;
 				}
 			}
 			CompletableFuture<TransactionEvent> cf = channel.sendTransaction(response);
-			Logger.getLogger(Invoke.class.getName()).log(Level.INFO,cf.toString());
+			Logger.getLogger(Invoke.class.getName()).log(Level.FINE,cf.toString());
 			
-			for (ProposalResponse res: response) {
-				Status status = res.getStatus();
-				Logger.getLogger(Invoke.class.getName()).log(Level.INFO,"Invoked registerUser on "+chaincodeName + ". Status - " + status + " " +res.getMessage());
-			}
-		} catch (org.hyperledger.fabric.sdk.exception.InvalidArgumentException | TransactionException e) {
+//			for (ProposalResponse res: response) {
+//				Status status = res.getStatus();
+//				Logger.getLogger(Invoke.class.getName()).log(Level.INFO,"Invoked registerUser on "+chaincodeName + ". Status - " + status + " " +res.getMessage());
+//			}
+		} catch (org.hyperledger.fabric.sdk.exception.InvalidArgumentException e) {
 			Logger.getLogger(Client.class.getName()).log(Level.SEVERE,
 					"Can not init a channel while call the function " + functionName +" of " +chaincodeName);
 			e.printStackTrace();
@@ -270,7 +270,7 @@ public class Client {
 	public String query(String channelName, String chaincodeName, String functionName, String[] args) {
 		String result = new String();
 		try {
-			Channel channel = Util.newChannel(channelName, hfClient, config);
+			Channel channel = this.hfClient.getChannel(channelName);
 			QueryByChaincodeRequest request = hfClient.newQueryProposalRequest();
 			ChaincodeID.newBuilder().setName(chaincodeName).build();
 			request.setChaincodeID(ChaincodeID.newBuilder().setName(chaincodeName).build());
@@ -281,7 +281,7 @@ public class Client {
 			    String stringResponse = new String(pres.getChaincodeActionResponsePayload());
 			    result = result.concat(stringResponse);
 			}
-		    Logger.getLogger(Query.class.getName()).log(Level.INFO, "query result:\n" + result);
+		    Logger.getLogger(Query.class.getName()).log(Level.FINE, "query result:\n" + result);
 									
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -290,8 +290,8 @@ public class Client {
 		return result;
 	}
 	
-	public boolean queryChatHistory() {
-		return true;
+	public String queryChatHistory(String channelName) {
+		return query(channelName, "chatroom", "getChatHistory", new String[] {});
 	}
 	
 	public String qeryUserStatus() {

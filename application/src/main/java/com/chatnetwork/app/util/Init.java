@@ -21,7 +21,7 @@ import com.chatnetwork.app.config.Config;
 public class Init {
 	
 	public static final int Start = 1;
-	public static final int End = 3;
+	public static final int End = 100;
 
 	public static void main(String[] args) throws EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException, TransactionException, ProposalException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
 		Logger logger = Logger.getLogger(Init.class.getName());
