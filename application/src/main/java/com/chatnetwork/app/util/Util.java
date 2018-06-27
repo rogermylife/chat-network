@@ -66,6 +66,7 @@ public class Util {
 			channel.addPeer(client.newPeer(config.getOrgName(), config.getPeerUrl()));
 			channel.addEventHub(client.newEventHub("eventhub", config.getEventhubUrl()));
 			channel.addOrderer(client.newOrderer("orderer", config.getOrdererUrl()));
+			channel.setTransactionWaitTime(18000);
 			channel.initialize();
 			
 			return channel;

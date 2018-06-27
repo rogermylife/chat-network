@@ -19,28 +19,9 @@
       - __ORGPREFIX__3:7053
     networks:
       - chat-network
-    # cpus: 0.01
-    # cpu_shares: 2
+    cpus: 1
+    cpu_shares: 2
     depends_on:
       - peer0.__PREORGNAME__.chat-network.com
   
-  ca.__ORGNAME__.chat-network.com:
-    image: hyperledger/fabric-ca:$IMAGE_TAG
-    environment:
-      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-__ORGNAME__
-      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server/ca.__ORGNAME__.chat-network.com-cert.pem
-      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server/____ORGNAME___CA_PRIVATE_KEY__
-    ports:
-      - "__ORGPREFIX__4:7054"
-    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
-    volumes:
-      - ../crypto-config/newOrgs/__ORGNAME__/peerOrganizations/__ORGNAME__.chat-network.com/ca/:/etc/hyperledger/fabric-ca-server
-    container_name: ca.__ORGNAME__.chat-network.com
-    networks:
-      - chat-network
-    # cpus: 0.01
-    # cpu_shares: 2
-    depends_on:
-      - ca.__PREORGNAME__.chat-network.com
 

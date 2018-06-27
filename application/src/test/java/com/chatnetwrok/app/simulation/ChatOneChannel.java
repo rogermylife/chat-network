@@ -28,14 +28,14 @@ public class ChatOneChannel {
 	public void chatOneChannel() throws InterruptedException, ExecutionException, EnrollmentException, CryptoException, InvalidArgumentException, NoSuchAlgorithmException, InvalidKeySpecException, IOException, TransactionException {
 		Client client = new Client(new Config("official"));
 		Util.newChannel("officialchannel", client.getHFClient(), client.getConfig());
-		double[] f = new double[] {0.1, 0.3, 0.5, 1, 1.5, 3};
+		double[] f = new double[] {0.01, 0.3, 0.5, 1, 1.5, 3};
 		for (double ff : f) {
 			client.initChatRoom("officialchannel");
 			Thread.sleep(2000);
 			ExecutorService service = Executors.newFixedThreadPool(2);
 			Future<String> sender = service.submit(new Sender("official", "officialchannel", ff, 100));
 			Thread.sleep(2000);
-			Future<String> receiver = service.submit(new Receiver("org37", "officialchannel", 
+			Future<String> receiver = service.submit(new Receiver("official", "officialchannel", 
 																  new String[] {"official"}, ff, 100));
 			System.out.println(sender.get());
 			System.out.println(receiver.get());

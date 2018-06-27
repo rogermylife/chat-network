@@ -354,6 +354,7 @@ function networkUp () {
     exit 1
   fi
   # now run the end to end script
+  sleep 3
   docker exec cli scripts/script.sh 'officialchannel' $CLI_DELAY $LANGUAGE $CLI_TIMEOUT
   if [ $? -ne 0 ]; then
     echo "ERROR !!!! Test failed"
