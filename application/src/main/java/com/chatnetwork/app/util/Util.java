@@ -11,7 +11,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
@@ -19,8 +21,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -47,7 +52,49 @@ public class Util {
 	
 	// In general, portList file is next to manageNetwrok.sh
 	static final public String portList = new String("../portList");
+	static final public String channelOrgTpl = new String("                - *__ORGID__Org\n");
+	static final public String orgTpl = new String(""
+			+ "    - &__ORGID__Org\n"
+			+ "        Name: __ORGID__MSP\n"
+			+ "        ID: __ORGID__MSP\n"
+			+ "        MSPDir: ../crypto-config/peerOrganizations/__ORGNAME__.chat-network.com/msp\n"
+			+ "        AnchorPeers:\n"
+			+ "            - Host: peer0.__ORGNAME__.chat-network.com\n"
+			+ "              Port: 7051\n"
+			+ "");
 	
+	private static void execConfigtxgen(String args) {
+		// TODO Auto-generated method stub
+//		ProcessBuilder builder = new ProcessBuilder("../bin/configtxgen", " -profile",
+//				"testchannel",
+//				"-outputCreateChannelTx",
+//				"../channel-artifacts/testchannel_channel.tx",
+//				"-channelID testchannel");
+//		ProcessBuilder builder = new ProcessBuilder("echo", "XDD");
+		ProcessBuilder builder = new ProcessBuilder("../bin/configtxgen", "-profile", "testchannel","-outputCreateChannelTx", "../channel-artifacts/testchannel_channel.tx", "-channelID", "testchannel");
+	    Map<String, String> env = builder.environment();
+	    env.put("FABRIC_CFG_PATH", "../configs");
+	    Process process;
+		try {
+			process = builder.start();
+			int errCode = process.waitFor();
+			System.out.println("Echo command executed, any errors? " + (errCode == 0 ? "No" : "Yes"));
+			InputStream is = process.getErrorStream();
+		    InputStreamReader isr = new InputStreamReader(is);
+		    BufferedReader br = new BufferedReader(isr);
+		    String line;
+		    while ((line = br.readLine()) != null) {
+		      System.out.println(line);
+		    }
+		    
+		    System.out.println("Program terminated!");
+		} catch (IOException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    
+	}
+
 	static public HFCAClient newCAClient(String url) throws MalformedURLException {
 		CryptoSuite cryptoSuite = CryptoSuite.Factory.getCryptoSuite();
 		Properties p =new Properties();
@@ -71,6 +118,42 @@ public class Util {
 			
 			return channel;
 		}
+
+	public static String newChannelFilePath(String channelName, ArrayList<String> orgList) {
+		String configtxChannelString = newConfigtxChannelString (channelName, orgList);
+		writeStringToFile(configtxChannelString, "../configs/configtx.yaml");
+		String args = String.format(" -profile %s "
+				+ "-outputCreateChannelTx ../channel-artifacts/%s_channel.tx "
+				+ "-channelID %s", channelName, channelName, channelName);
+		System.out.println(args);
+		execConfigtxgen(args);
+		
+		return null;
+	}
+
+	public static String newConfigtxChannelString (String channelName, ArrayList<String> orgList) {
+		String configtxFileString = Util.readStringFromFile("../configs/configtx-channel-template.yaml");
+		configtxFileString = configtxFileString.replaceAll("__CHANNEL_NAME__", channelName);
+		
+		String channelOrgs = "";
+		String orgs = "";
+		for (int i=0; i< orgList.size(); i++) {
+			String orgName = orgList.get(i);
+			String orgID = Util.upperFirstLetter(orgName);
+			String temp;
+			
+			temp = Util.channelOrgTpl.replaceAll("__ORGID__", orgID);
+			channelOrgs = channelOrgs.concat(temp);
+			
+			temp = Util.orgTpl.replaceAll("__ORGID__", orgID);
+			temp = temp.replaceAll("__ORGNAME__", orgName);
+			orgs = orgs.concat(temp);
+		}
+		configtxFileString = configtxFileString.replaceAll("__CHANNEL_ORGS__", channelOrgs);
+		configtxFileString = configtxFileString.replaceAll("__ORGS__", orgs);
+		System.out.println("YOYO" + configtxFileString + "YOYO");
+		return configtxFileString;
+	}
 
 	public static CAEnrollment newEnrollment(String keyFolderPath, String certFolderPath)
 			throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, CryptoException {
@@ -190,5 +273,28 @@ public class Util {
 			e.printStackTrace();
 		}
 		return prefix;
+	}
+	
+	static public String readStringFromFile(String filePath) {
+		StringBuilder contentBuilder = new StringBuilder();
+		try (Stream<String> stream = Files.lines( Paths.get(filePath), StandardCharsets.UTF_8)) 
+		{
+			stream.forEach(s -> contentBuilder.append(s).append("\n"));
+		}
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+		return contentBuilder.toString();
+	}
+	
+	static public String upperFirstLetter(String input) {
+		return input.substring(0, 1).toUpperCase() + input.substring(1);
+	}
+	
+	static public void writeStringToFile(String input, String filePath) {
+		try(PrintStream ps = new PrintStream(filePath)) { ps.println(input); } catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 }

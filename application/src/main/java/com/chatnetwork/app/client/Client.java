@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,10 +20,12 @@ import org.hyperledger.fabric.sdk.BlockEvent.TransactionEvent;
 import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.ChaincodeResponse.Status;
 import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.ChannelConfiguration;
 import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.InstallProposalRequest;
 import org.hyperledger.fabric.sdk.InstantiateProposalRequest;
+import org.hyperledger.fabric.sdk.Orderer;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
@@ -67,7 +70,38 @@ public class Client {
 	}
 	
 	public boolean createChatRoom(String channelName) {
-		return true;
+		ArrayList<String> orgList = new ArrayList<String>();
+		return createChatRoom(channelName, orgList);
+	}
+	
+	public boolean createChatRoom(String channelName, ArrayList<String> orgList) {
+		orgList.add(this.config.getOrgName());
+		String filePath = Util.newChannelFilePath(channelName, orgList);
+		try {
+			ChannelConfiguration channelConfig = new ChannelConfiguration(new File(filePath));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		byte[] channelConfigurationSignatures;
+//		try {
+//			return false;
+//			channelConfigurationSignatures = this.hfClient.getChannelConfigurationSignature(channelConfig, this.admin);
+//			Orderer orderer = this.hfClient.newOrderer(this.config.getOrdererName(), this.config.getOrdererUrl());
+//			Channel channel = this.hfClient.newChannel(channelName, orderer, channelConfig, channelConfigurationSignatures);
+//			channel.joinPeer(this.hfClient.newPeer(this.config.getOrgName(), this.config.getPeerUrl()));
+//			channel.addOrderer(orderer);
+//			channel.initialize();
+//			
+//			return true;
+//		} catch (InvalidArgumentException e) {
+//			e.printStackTrace();
+//		} catch (TransactionException e) {
+//			e.printStackTrace();
+//		} catch (ProposalException e) {
+//			e.printStackTrace();
+//		}
+		return false;
 	}
 	
 	public AppUser getAdmin() {

@@ -23,14 +23,6 @@ public class Config {
 	private String chaincodeBase;
 	private String chaincodeChatroom;
 	private String chaincodeStatus;
-	public String getChaincodeStatus() {
-		return chaincodeStatus;
-	}
-
-	public void setChaincodeStatus(String chaincodeStatus) {
-		this.chaincodeStatus = chaincodeStatus;
-	}
-
 	private String defaultChannelName;
 	private String eventhubUrl;
 	private String ordererName;
@@ -221,6 +213,13 @@ public class Config {
 
 	public void setChaincodeChatroom(String chaincodeChatroom) {
 		this.chaincodeChatroom = chaincodeChatroom;
+	}
+	public String getChaincodeStatus() {
+		return chaincodeStatus;
+	}
+
+	public void setChaincodeStatus(String chaincodeStatus) {
+		this.chaincodeStatus = chaincodeStatus;
 	}
 
 }

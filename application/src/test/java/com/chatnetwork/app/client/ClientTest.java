@@ -47,5 +47,11 @@ public class ClientTest {
 		//client.qeryUserStatus();
 		//client.joinChannel(client.getConfig().getDefaultChannelName());
 	}
+	
+	@Test
+	public void testCreateChannel() throws EnrollmentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+		Client client = new Client(new Config("org1"));
+		client.createChatRoom("testchannel");
+	}
 
 }
