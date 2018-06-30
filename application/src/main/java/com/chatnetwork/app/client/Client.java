@@ -76,31 +76,27 @@ public class Client {
 	
 	public boolean createChatRoom(String channelName, ArrayList<String> orgList) {
 		orgList.add(this.config.getOrgName());
-		String filePath = Util.newChannelFilePath(channelName, orgList);
+		String txPath = Util.newChannelTxPath(channelName, orgList);
 		try {
-			ChannelConfiguration channelConfig = new ChannelConfiguration(new File(filePath));
+			ChannelConfiguration channelConfig = new ChannelConfiguration(new File(txPath));
+			byte[] channelConfigurationSignatures;
+			channelConfigurationSignatures = this.hfClient.getChannelConfigurationSignature(channelConfig, this.admin);
+			Orderer orderer = this.hfClient.newOrderer(this.config.getOrdererName(), this.config.getOrdererUrl());
+			Channel channel = this.hfClient.newChannel(channelName, orderer, channelConfig, channelConfigurationSignatures);
+			channel.joinPeer(this.hfClient.newPeer(this.config.getOrgName(), this.config.getPeerUrl()));
+			channel.addOrderer(orderer);
+			channel.initialize();
+			return true;
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidArgumentException e) {
+			e.printStackTrace();
+		} catch (TransactionException e) {
+			e.printStackTrace();
+		} catch (ProposalException e) {
 			e.printStackTrace();
 		}
-		byte[] channelConfigurationSignatures;
-//		try {
-//			return false;
-//			channelConfigurationSignatures = this.hfClient.getChannelConfigurationSignature(channelConfig, this.admin);
-//			Orderer orderer = this.hfClient.newOrderer(this.config.getOrdererName(), this.config.getOrdererUrl());
-//			Channel channel = this.hfClient.newChannel(channelName, orderer, channelConfig, channelConfigurationSignatures);
-//			channel.joinPeer(this.hfClient.newPeer(this.config.getOrgName(), this.config.getPeerUrl()));
-//			channel.addOrderer(orderer);
-//			channel.initialize();
-//			
-//			return true;
-//		} catch (InvalidArgumentException e) {
-//			e.printStackTrace();
-//		} catch (TransactionException e) {
-//			e.printStackTrace();
-//		} catch (ProposalException e) {
-//			e.printStackTrace();
-//		}
+
 		return false;
 	}
 	
@@ -118,9 +114,17 @@ public class Client {
 	
 	public boolean joinChannel(String channelName) throws org.hyperledger.fabric.sdk.exception.InvalidArgumentException {
 		Channel channel = hfClient.getChannel(channelName);
-		if(channel ==null) {
-			Logger.getLogger(channelName).log(Level.SEVERE, String.format("[%s]-> get channel [%s] failed", this.config.getPeerName(), channelName));
-			return false;
+		if(channel == null) {
+			try {
+				channel = Util.newChannel(channelName, this.hfClient, this.config);
+			} catch (TransactionException e) {
+				e.printStackTrace();
+				return false;
+			}
+			if (channel == null) {
+				Logger.getLogger(channelName).log(Level.SEVERE, String.format("[%s]-> get channel [%s] failed", this.config.getPeerName(), channelName));
+				return false;
+			}
 		}
 		return joinChannel(channel);
 	}

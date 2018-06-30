@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric_ca.sdk.exception.EnrollmentException;
@@ -41,17 +42,20 @@ public class ClientTest {
 	
 	@Test
 	public void testJoinChannel() throws EnrollmentException, InvalidArgumentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-//		Client client = new Client(new Config("org1"));
+		Client client = new Client(new Config("org3"));
 //		client.qeryUserStatus();
-		//client.registerUser();
-		//client.qeryUserStatus();
-		//client.joinChannel(client.getConfig().getDefaultChannelName());
+//		client.registerUser();
+//		client.qeryUserStatus();
+		client.joinChannel("testchannel2");
 	}
 	
 	@Test
 	public void testCreateChannel() throws EnrollmentException, CryptoException, org.hyperledger.fabric.sdk.exception.InvalidArgumentException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
 		Client client = new Client(new Config("org1"));
-		client.createChatRoom("testchannel");
+		ArrayList<String> orgList = new ArrayList<String>();
+		orgList.add("org2");
+		orgList.add("org3");
+		client.createChatRoom("testchannel2", orgList);
 	}
 
 }
