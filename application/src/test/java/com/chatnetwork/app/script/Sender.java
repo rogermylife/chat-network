@@ -28,7 +28,6 @@ public class Sender implements Callable<String>{
 		Util.newChannel(this.channelName, client.getHFClient(), client.getConfig());
 		for (int i=1; i<= this.num; i++) {
 			client.sendMsg(channelName, String.format("[%s] test message:%d", this.orgName, i));
-//			System.out.println("done" + i);
 			Thread.sleep((long) (seconds * 1000));
 		}
 		return String.format("sender [%s] done %d messages %f seconds one msg", this.orgName, this.num, this.seconds);

@@ -67,16 +67,8 @@ public class Receiver implements Callable<String>{
 //				System.out.println(tempNum);
 			}
 			
-//			for(String orgName : this.orgList) {
-//		        for (int i=1; i<=num ;i++) {
-//		        	if (chatHistory.contains(orgName) && chatHistory.contains(i)) {
-//		        		
-//		        	}
-//		        }
-//		    }
 			
 		}while(System.currentTimeMillis() - startTime < this.seconds*1000*this.num + 2000);
-//		System.out.println("DONE");
 		String result = new String();
 		for (Map.Entry<String, Record> entry : records.entrySet()) {
 		    String orgName = entry.getKey();
