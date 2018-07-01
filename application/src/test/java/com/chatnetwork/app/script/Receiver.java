@@ -41,6 +41,8 @@ public class Receiver implements Callable<String>{
 		long startTime = System.currentTimeMillis();
 		do {
 			String chatHistory = client.queryChatHistory(this.channelName);
+			if (chatHistory.equals(""))
+				continue;
 			long time = System.currentTimeMillis();
 			JsonObject object = parser.parse(chatHistory).getAsJsonObject(); 
 			JsonArray messages = object.get("Messages").getAsJsonArray();

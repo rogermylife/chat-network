@@ -19,8 +19,8 @@
       - __ORGPREFIX__3:7053
     networks:
       - chat-network
-    cpus: 1
-    cpu_shares: 2
+    # cpus: 1
+    # cpu_shares: 2
     depends_on:
       - peer0.__PREORGNAME__.chat-network.com
   

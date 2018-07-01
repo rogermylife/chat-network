@@ -66,28 +66,26 @@ public class Util {
 	private static void execConfigtxgen(String args) {
 		// TODO Auto-generated method stub
 		String command = String.format("../bin/configtxgen %s", args);
-		for (String temp : command.split(" ")) {
-			System.out.println(temp);
-		}
+//		for (String temp : command.split(" ")) {
+//			System.out.println(temp);
+//		}
 		ProcessBuilder builder = new ProcessBuilder(command.split(" "));
-//		ProcessBuilder builder = new ProcessBuilder("echo", "XDD");
-//		ProcessBuilder builder = new ProcessBuilder("../bin/configtxgen", "-profile", "testchannel","-outputCreateChannelTx", "../channel-artifacts/testchannel_channel.tx", "-channelID", "testchannel");
 	    Map<String, String> env = builder.environment();
 	    env.put("FABRIC_CFG_PATH", "../configs");
 	    Process process;
 		try {
 			process = builder.start();
 			int errCode = process.waitFor();
-			System.out.println("Echo command executed, any errors? " + (errCode == 0 ? "No" : "Yes"));
-			InputStream is = process.getErrorStream();
-		    InputStreamReader isr = new InputStreamReader(is);
-		    BufferedReader br = new BufferedReader(isr);
-		    String line;
-		    while ((line = br.readLine()) != null) {
-		      System.out.println(line);
-		    }
+//			System.out.println("Echo command executed, any errors? " + (errCode == 0 ? "No" : "Yes"));
+//			InputStream is = process.getErrorStream();
+//		    InputStreamReader isr = new InputStreamReader(is);
+//		    BufferedReader br = new BufferedReader(isr);
+//		    String line;
+//		    while ((line = br.readLine()) != null) {
+//		      System.out.println(line);
+//		    }
 		    
-		    System.out.println("Program terminated!");
+//		    System.out.println("Program terminated!");
 		} catch (IOException | InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -126,7 +124,7 @@ public class Util {
 		String args = String.format("-profile %s "
 				+ "-outputCreateChannelTx %s "
 				+ "-channelID %s", channelName, txPath, channelName);
-		System.out.println(args);
+//		System.out.println(args);
 		execConfigtxgen(args);
 		return txPath;
 	}

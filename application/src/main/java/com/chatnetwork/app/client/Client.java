@@ -245,7 +245,6 @@ public class Client {
 			e.printStackTrace();
 			return false;
 		}
-        
         return true;
 	}
 	
@@ -316,8 +315,20 @@ public class Client {
 			request.setArgs(args);
 			Collection<ProposalResponse> res = channel.queryByChaincode(request);
 			for (ProposalResponse pres : res) {
-			    String stringResponse = new String(pres.getChaincodeActionResponsePayload());
-			    result = result.concat(stringResponse);
+				if (pres.getStatus() == ProposalResponse.Status.SUCCESS) {
+					String stringResponse = new String(pres.getChaincodeActionResponsePayload());
+					Logger.getLogger(Client.class.getName()).log(Level.FINE,
+							"Transaction proposal on channel " + channelName + " " + pres.getMessage() + " "
+									+ pres.getStatus() + " with transaction id:" + pres.getTransactionID());
+					Logger.getLogger(Client.class.getName()).log(Level.FINE,stringResponse);
+					result = result.concat(stringResponse);
+				}
+				else {
+					Logger.getLogger(Client.class.getName()).log(Level.SEVERE,"response failed \n"+pres.getMessage() + " " 
+										+ pres.getStatus() + " with transaction id:" + pres.getTransactionID());
+					return "";
+				}
+			    
 			}
 		    Logger.getLogger(Query.class.getName()).log(Level.FINE, "query result:\n" + result);
 									

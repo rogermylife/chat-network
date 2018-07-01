@@ -31,6 +31,7 @@ public class ChannelCreator implements Callable<String>{
 		peers = channel.getPeers();
 		client.installChaincode("chatroom", "1.0", client.getConfig().getChaincodeBase(), client.getConfig().getChaincodeChatroom(), peers);
 		client.instantiateChainCode("chatroom", "1.0", client.getConfig().getChaincodeChatroom(), this.channelName, new String[] {});
+		Thread.sleep(10000);
 		client.initChatRoom(channelName);
 		return String.format("[%s] create chatroom [%s] done", this.orgName, this.channelName);
 	}
