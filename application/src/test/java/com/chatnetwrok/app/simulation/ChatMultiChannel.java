@@ -22,7 +22,7 @@ public class ChatMultiChannel {
 	public void chatMultiChannel() throws InterruptedException, ExecutionException {
 		Logger logger = Logger.getLogger(ChatMultiChannel.class.getName());
 		ExecutorService service = Executors.newFixedThreadPool(100);
-		String seperator = "-02-";
+		String seperator = "-022-";
 		int[] nums = new int[] {2};
 		ArrayList<Future<String>> creators = new ArrayList<Future<String>>();
 		ArrayList<Future<String>> initers = new ArrayList<Future<String>>();
@@ -58,22 +58,22 @@ public class ChatMultiChannel {
 				}
 			}
 			for ( Future<String> joiner : joiners) {
-				logger.log(Level.INFO, joiner.get());
+				joiner.get();
 			}
 			for ( Future<String> initer : initers) {
-				logger.log(Level.INFO, initer.get());
+				initer.get();
 			}
 			logger.log(Level.INFO, "join channel and init done");
-			Thread.sleep(5000);
+			Thread.sleep(300000);
 			
 			logger.log(Level.INFO, "start Chat");
 			for (int i=1 ;i<=num; i++) {
 				String senderName = "org"+(1+10*(i-1));
 				String receiverName = "org"+(2+10*(i-1));
 				String channelName = senderName+seperator+num;
-				senders.add(service.submit(new Sender(senderName, channelName, 1, 100)));
+				senders.add(service.submit(new Sender(senderName, channelName, 0.5, 100)));
 				Thread.sleep(2000);
-				receivers.add(service.submit(new Receiver(receiverName, channelName, new String[] {senderName}, 1, 100)));
+				receivers.add(service.submit(new Receiver(receiverName, channelName, new String[] {senderName}, 0.5, 100)));
 			}
 			for (int i=1 ;i<=num; i++) {
 				logger.log(Level.INFO, senders.get(i-1).get());
