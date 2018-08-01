@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
-import javax.ws.rs.GET;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -18,17 +19,17 @@ import com.chatnetwork.app.client.Client;
 import com.chatnetwork.app.config.Config;
 import com.chatnetwork.app.util.Util;
 
-@Path("myresource")
-public class MyResource {
-
-	@GET
+@Path("addMsg")
+public class AddMsg {
+	@POST
     @Produces(MediaType.TEXT_PLAIN)
-    public String getIt() {
+    public String post(@FormParam("channelName") String channelName, @FormParam("content") String content) {
+		
 		try {
 			Client client = new Client(new Config("official"));
-			Util.newChannel("officialchannel", client.getHFClient(), client.getConfig());
-			String chatHistory = client.queryChatHistory("officialchannel");
-			return chatHistory;
+			Util.newChannel(channelName, client.getHFClient(), client.getConfig());
+			client.sendMsg(channelName, content);
+			return "Success";
 		} catch (EnrollmentException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -51,6 +52,8 @@ public class MyResource {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        return "failed";
-    }
+		
+		return "Failed";
+	
+	}
 }
