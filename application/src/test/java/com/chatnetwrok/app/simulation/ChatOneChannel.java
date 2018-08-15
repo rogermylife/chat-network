@@ -33,10 +33,10 @@ public class ChatOneChannel {
 			client.initChatRoom("officialchannel");
 			Thread.sleep(2000);
 			ExecutorService service = Executors.newFixedThreadPool(2);
-			Future<String> sender = service.submit(new Sender("official", "officialchannel", ff, 100));
+			Future<String> sender = service.submit(new Sender("official", "officialchannel", ff, 10));
 			Thread.sleep(2000);
 			Future<String> receiver = service.submit(new Receiver("official", "officialchannel", 
-																  new String[] {"official"}, ff, 100));
+																  new String[] {"official"}, ff, 10));
 			System.out.println(sender.get());
 			System.out.println(receiver.get());
 		}

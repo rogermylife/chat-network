@@ -9,7 +9,13 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.io.IOException;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Response;
 import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
     ChatNetworkService service;
@@ -32,11 +38,22 @@ public class MainActivity extends AppCompatActivity {
         });
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://localhost:10080/myapp/")
+                .baseUrl("http://10.0.2.2:10080/myapp/")
+                .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
-        service = retrofit.create(ChatNetworkService.class);
-        service.getChatHistory("officialChannel");
+//        service = retrofit.create(ChatNetworkService.class);
+//        Call<ResponseBody> myCall = service.getChatHistory("officialchannel");
+//        Response<ResponseBody> response = null;
+//        try {
+//            response = myCall.execute();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        System.out.println("response code" + response.code());
+
+        ServiceController controller = new ServiceController();
+        controller.start();
     }
 
     @Override
